@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE PLUG — Community Marketplace</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:#00E87A;--green-dark:#00b85f;--green-glow:rgba(0,232,122,0.15);
+  --amber:#FFB800;--red:#FF3B3B;--gold:#FFD700;
+  --bg:#0D0D0D;--surface:#161616;--surface2:#1E1E1E;--surface3:#252525;
+  --border:rgba(255,255,255,0.07);--text:#F5F5F0;--text-muted:#888;--text-dim:#555;
+  --radius:16px;--radius-sm:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+.app-shell{display:flex;height:100vh;max-width:430px;margin:0 auto;flex-direction:column;position:relative;background:var(--bg);overflow:hidden;box-shadow:0 0 80px rgba(0,0,0,0.8);}
+.screen{display:none;flex-direction:column;height:100%;overflow:hidden;}
+.screen.active{display:flex;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;flex-shrink:0;background:var(--bg);border-bottom:1px solid var(--border);}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.5px;color:var(--green);cursor:pointer;}
+.logo span{color:var(--text);}
+.icon-btn{width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:background .2s;}
+.icon-btn:hover{background:var(--surface3);}
+.scroll-area{flex:1;overflow-y:auto;padding-bottom:90px;}
+.scroll-area::-webkit-scrollbar{width:0;}
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding:10px 0 16px;z-index:100;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--text-dim);font-size:10px;font-weight:500;transition:color .2s;}
+.nav-item.active{color:var(--green);}
+.nav-icon{font-size:20px;line-height:1;}
+.fab{width:52px;height:52px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#000;font-weight:700;margin-top:-22px;box-shadow:0 0 24px var(--green-glow);cursor:pointer;transition:transform .15s;}
+.fab:hover{transform:scale(1.07);}
+.badge{position:absolute;top:0;right:10px;width:8px;height:8px;background:var(--red);border-radius:50%;border:1px solid var(--bg);}
+
+/* SPLASH */
+#splash{background:radial-gradient(ellipse at 30% 40%,rgba(0,232,122,.12) 0%,transparent 60%),radial-gradient(ellipse at 80% 70%,rgba(0,232,122,.06) 0%,transparent 50%),var(--bg);justify-content:center;align-items:center;}
+.splash-inner{text-align:center;padding:40px 32px;}
+.splash-logo{font-family:'Syne',sans-serif;font-size:72px;font-weight:800;color:var(--green);letter-spacing:-4px;line-height:1;animation:glow 2.5s ease-in-out infinite;}
+@keyframes glow{0%,100%{text-shadow:0 0 30px rgba(0,232,122,.4);}50%{text-shadow:0 0 70px rgba(0,232,122,.9);}}
+.splash-tag{font-family:'Syne',sans-serif;color:var(--text-muted);font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-top:8px;}
+.splash-sub{color:var(--text-muted);font-size:15px;margin-top:28px;line-height:1.7;}
+.splash-sub em{color:var(--green);font-style:normal;}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--green);color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;padding:14px 32px;border-radius:100px;border:none;cursor:pointer;transition:transform .15s,box-shadow .2s;letter-spacing:.3px;}
+.btn-primary:hover{transform:scale(1.03);box-shadow:0 8px 32px rgba(0,232,122,.3);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--green);font-family:'Syne',sans-serif;font-weight:600;font-size:15px;padding:13px 32px;border-radius:100px;border:1.5px solid var(--green);cursor:pointer;transition:background .2s;}
+.btn-outline:hover{background:var(--green-glow);}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text-muted);font-size:14px;padding:12px 24px;border-radius:100px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:border-color .2s;}
+
+/* ONBOARD */
+.slide{display:none;flex:1;flex-direction:column;padding:40px 28px 32px;overflow-y:auto;}
+.slide.active{display:flex;}
+.slide-num{font-family:'Syne',sans-serif;font-size:11px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;margin-bottom:14px;}
+.slide-emoji{font-size:56px;margin-bottom:20px;}
+.slide h2{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1.15;color:var(--text);margin-bottom:14px;}
+.slide h2 em{color:var(--green);font-style:normal;}
+.slide p{color:var(--text-muted);font-size:15px;line-height:1.7;}
+.lang-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:20px 0;}
+.lang-card{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 12px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;}
+.lang-card.selected,.lang-card:hover{border-color:var(--green);background:var(--green-glow);}
+.lang-card .flag{font-size:26px;}
+.lang-card .lname{font-size:12px;font-weight:600;margin-top:7px;}
+.lang-card .lsub{font-size:10px;color:var(--text-muted);margin-top:2px;}
+.suburb-search{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;color:var(--text);font-size:15px;width:100%;outline:none;margin-bottom:12px;font-family:'DM Sans',sans-serif;}
+.suburb-search:focus{border-color:var(--green);}
+.suburb-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;}
+.suburb-list::-webkit-scrollbar{width:0;}
+.suburb-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:border-color .2s;font-size:14px;}
+.suburb-item:hover{border-color:var(--green);}
+.suburb-item.selected{border-color:var(--green);background:var(--green-glow);}
+.suburb-zone{font-size:11px;color:var(--text-muted);}
+.field-input{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;color:var(--text);font-size:15px;width:100%;outline:none;font-family:'DM Sans',sans-serif;}
+.field-input:focus{border-color:var(--green);}
+.age-warn{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.3);border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;color:var(--amber);margin-top:12px;display:none;}
+.plug-code-item{display:flex;gap:14px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;}
+.pcn{width:26px;height:26px;background:var(--green);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;font-family:'Syne',sans-serif;}
+.plug-code-item h4{font-size:14px;font-weight:600;margin-bottom:3px;}
+.plug-code-item p{font-size:13px;color:var(--text-muted);line-height:1.5;}
+.quiz-box{background:var(--surface2);border:1.5px solid var(--amber);border-radius:var(--radius);padding:18px;margin:16px 0;}
+.quiz-box h4{font-size:13px;font-weight:700;color:var(--amber);margin-bottom:6px;}
+.quiz-box p{font-size:14px;color:var(--text);margin-bottom:12px;}
+.quiz-opt{padding:11px 14px;background:var(--surface3);border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:14px;margin-bottom:7px;transition:border-color .2s;}
+.quiz-opt:hover{border-color:var(--text-muted);}
+.quiz-opt.correct{border-color:var(--green);background:var(--green-glow);color:var(--green);}
+.quiz-opt.wrong{border-color:var(--red);background:rgba(255,59,59,.1);color:var(--red);}
+
+/* HOME */
+.feed-toggle{display:flex;margin:12px 20px 4px;background:var(--surface2);border-radius:100px;padding:4px;}
+.feed-tab{flex:1;padding:9px;border-radius:100px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s,color .2s;color:var(--text-muted);font-family:'Syne',sans-serif;}
+.feed-tab.active{background:var(--green);color:#000;}
+.section-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 8px;}
+.section-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);}
+.see-all{font-size:13px;color:var(--green);cursor:pointer;font-weight:600;}
+.urgency-rail{padding:0 20px;overflow-x:auto;display:flex;gap:12px;padding-bottom:4px;}
+.urgency-rail::-webkit-scrollbar{height:0;}
+.urgency-card{min-width:145px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s;flex-shrink:0;}
+.urgency-card:hover{border-color:var(--green);transform:translateY(-2px);}
+.urgency-img{width:100%;height:86px;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:34px;position:relative;}
+.urgency-timer{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.8);border-radius:5px;padding:3px 7px;font-size:11px;font-weight:700;color:var(--red);font-family:'Syne',sans-serif;}
+.urgency-info{padding:9px 11px;}
+.urgency-info h5{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.urgency-bid{font-size:12px;color:var(--green);font-weight:700;margin-top:2px;}
+.listing-card{margin:0 20px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:border-color .2s;display:flex;}
+.listing-card:hover{border-color:rgba(0,232,122,.3);}
+.listing-thumb{width:86px;height:86px;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:34px;flex-shrink:0;}
+.listing-body{padding:12px 13px;flex:1;min-width:0;}
+.listing-body h4{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.listing-meta{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;}
+.listing-price{font-size:15px;font-weight:700;color:var(--green);}
+.listing-time{font-size:11px;color:var(--text-muted);background:var(--surface2);padding:2px 7px;border-radius:4px;}
+.listing-suburb{font-size:11px;color:var(--text-muted);}
+.ubuntu-chip{display:inline-flex;align-items:center;gap:4px;background:var(--surface3);border-radius:100px;padding:3px 8px;font-size:11px;color:var(--text-muted);margin-top:5px;}
+.dot{width:6px;height:6px;border-radius:50%;}
+.dot-g{background:var(--green);}
+.dot-a{background:var(--amber);}
+.gig-card{margin:0 20px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;cursor:pointer;transition:border-color .2s;}
+.gig-card:hover{border-color:rgba(0,232,122,.3);}
+.gig-header{display:flex;align-items:flex-start;gap:12px;}
+.gig-icon{width:42px;height:42px;background:var(--surface3);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;}
+.gig-icon.youth{border:1.5px solid var(--green);}
+.gig-info{flex:1;}
+.gig-info h4{font-size:14px;font-weight:600;}
+.gig-info p{font-size:13px;color:var(--text-muted);margin-top:3px;}
+.gig-meta{display:flex;gap:10px;margin-top:9px;flex-wrap:wrap;}
+.gig-stat{font-size:12px;color:var(--text-muted);}
+.gig-stat strong{color:var(--text);}
+.youth-tag{display:inline-flex;align-items:center;gap:3px;background:rgba(0,232,122,.1);border:1px solid rgba(0,232,122,.3);color:var(--green);font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;}
+
+/* PROFILE */
+.profile-header{background:radial-gradient(ellipse at 50% 0%,rgba(0,232,122,.1) 0%,transparent 60%);padding:28px 20px 16px;text-align:center;}
+.avatar{width:78px;height:78px;border-radius:50%;background:var(--surface3);border:3px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 12px;box-shadow:0 0 20px rgba(0,232,122,.2);}
+.profile-name{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
+.profile-suburb{font-size:13px;color:var(--text-muted);margin-top:4px;}
+.ubuntu-meter{margin:16px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+.meter-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
+.meter-pts{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--green);}
+.meter-rank{font-size:12px;color:var(--text-muted);background:var(--surface2);padding:4px 12px;border-radius:100px;border:1px solid var(--border);}
+.prog-bar{height:7px;background:var(--surface3);border-radius:4px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--green),#00ffaa);border-radius:4px;}
+.meter-sub{font-size:12px;color:var(--text-muted);margin-top:7px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:0 20px 16px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px;text-align:center;}
+.stat-card .num{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
+.stat-card .lbl{font-size:11px;color:var(--text-muted);margin-top:3px;}
+.badges-row{display:flex;flex-wrap:wrap;gap:8px;padding:4px 20px 16px;}
+.badge-chip{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:6px 12px;font-size:12px;font-weight:600;}
+.badge-chip.green{border-color:var(--green);color:var(--green);background:var(--green-glow);}
+.reviews-list{padding:0 20px;}
+.review-item{padding:13px 0;border-bottom:1px solid var(--border);}
+.review-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.review-name{font-size:13px;font-weight:600;}
+.review-pts{font-size:13px;color:var(--green);font-weight:700;}
+.review-text{font-size:13px;color:var(--text-muted);line-height:1.5;}
+.review-date{font-size:11px;color:var(--text-dim);margin-top:4px;}
+
+/* MY PLUGS */
+.plugs-tabs{display:flex;gap:0;margin:14px 20px;background:var(--surface2);border-radius:var(--radius-sm);padding:4px;}
+.plugs-tab{flex:1;padding:10px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;border-radius:8px;color:var(--text-muted);transition:background .2s,color .2s;font-family:'Syne',sans-serif;}
+.plugs-tab.active{background:var(--green);color:#000;}
+.plugs-panel{display:none;}
+.plugs-panel.active{display:block;}
+.plug-item{margin:0 20px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;}
+.plug-item-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px;}
+.plug-item-title{font-size:15px;font-weight:600;}
+.pstatus{font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;letter-spacing:.4px;}
+.s-active{background:rgba(0,232,122,.15);color:var(--green);border:1px solid rgba(0,232,122,.3);}
+.s-pending{background:rgba(255,184,0,.12);color:var(--amber);border:1px solid rgba(255,184,0,.3);}
+.s-dispute{background:rgba(255,59,59,.12);color:var(--red);border:1px solid rgba(255,59,59,.3);}
+.swap-code{background:var(--surface3);border:1.5px dashed var(--green);border-radius:var(--radius-sm);padding:12px;text-align:center;margin-bottom:10px;}
+.swap-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--green);letter-spacing:8px;}
+.swap-lbl{font-size:11px;color:var(--text-muted);margin-top:3px;}
+.plug-acts{display:flex;gap:8px;}
+.btn-sm{flex:1;padding:10px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;text-align:center;border:none;font-family:'DM Sans',sans-serif;transition:opacity .2s;}
+.btn-sm:hover{opacity:.85;}
+.btn-sm.p{background:var(--green);color:#000;}
+.btn-sm.s{background:var(--surface3);color:var(--text);border:1px solid var(--border);}
+.btn-sm.d{background:rgba(255,59,59,.15);color:var(--red);border:1px solid rgba(255,59,59,.3);}
+.ctimer{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--amber);margin-bottom:7px;}
+
+/* SEARCH */
+.search-bar-wrap{padding:14px 20px 6px;}
+.search-bar{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 15px;}
+.search-bar input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;}
+.search-bar input::placeholder{color:var(--text-dim);}
+.filter-row{display:flex;gap:7px;padding:6px 20px;overflow-x:auto;}
+.filter-row::-webkit-scrollbar{height:0;}
+.fchip{flex-shrink:0;padding:6px 13px;background:var(--surface2);border:1.5px solid var(--border);border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--text-muted);transition:border-color .2s,color .2s;}
+.fchip.active{border-color:var(--green);color:var(--green);background:var(--green-glow);}
+.suburb-check{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.suburb-check:last-child{border:none;}
+.sc-label{font-size:14px;font-weight:500;}
+.sc-sub{font-size:12px;color:var(--text-muted);}
+.chk{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;}
+.chk.on{background:var(--green);border-color:var(--green);color:#000;font-weight:700;}
+.chk.locked{background:var(--surface3);color:var(--text-dim);}
+
+/* DETAIL */
+.detail-img{height:210px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:78px;position:relative;flex-shrink:0;}
+.detail-timer-tag{position:absolute;top:14px;right:14px;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);border-radius:8px;padding:7px 13px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--red);border:1px solid rgba(255,59,59,.3);}
+.detail-body{padding:18px 20px;}
+.detail-body h2{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;margin-bottom:5px;}
+.dprice{font-size:30px;font-weight:800;color:var(--green);font-family:'Syne',sans-serif;}
+.dprice span{font-size:14px;color:var(--text-muted);font-weight:400;}
+.seller-row{display:flex;align-items:center;gap:12px;margin:14px 0;padding:13px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;}
+.sav{width:38px;height:38px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:19px;}
+.bid-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;margin-bottom:14px;}
+.bid-section h4{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:11px;}
+
+/* POST */
+.post-toggle{display:flex;margin-bottom:20px;background:var(--surface2);border-radius:var(--radius-sm);padding:4px;}
+.ptype{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;border-radius:8px;color:var(--text-muted);font-family:'Syne',sans-serif;transition:background .2s,color .2s;}
+.ptype.active{background:var(--green);color:#000;}
+.upload-zone{height:110px;background:var(--surface2);border:2px dashed var(--border);border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;transition:border-color .2s;margin-bottom:14px;}
+.upload-zone:hover{border-color:var(--green);}
+.upload-zone p{font-size:13px;color:var(--text-muted);}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:7px;display:block;}
+.form-select{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;outline:none;font-family:'DM Sans',sans-serif;appearance:none;}
+.form-select:focus{border-color:var(--green);}
+.dur-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;}
+.dur-card{padding:13px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);text-align:center;cursor:pointer;transition:border-color .2s,background .2s;}
+.dur-card:hover,.dur-card.sel{border-color:var(--green);background:var(--green-glow);}
+.dur-card .h{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;}
+.dur-card .hl{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px 15px;margin-bottom:14px;}
+.tsw{width:42px;height:23px;background:var(--surface3);border-radius:12px;position:relative;cursor:pointer;transition:background .2s;}
+.tsw.on{background:var(--green);}
+.tkn{position:absolute;top:2.5px;left:2.5px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;}
+.tsw.on .tkn{transform:translateX(19px);}
+.price-note{text-align:center;padding:13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:18px;font-size:13px;color:var(--text-muted);}
+.price-note strong{color:var(--green);font-size:19px;font-family:'Syne',sans-serif;}
+
+/* DISPUTE */
+.dispute-hdr{background:rgba(255,59,59,.08);border-bottom:1px solid rgba(255,59,59,.2);padding:18px 20px;text-align:center;}
+.dispute-hdr h2{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:var(--red);}
+.dispute-hdr p{font-size:13px;color:var(--text-muted);margin-top:5px;}
+.reason-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 20px 16px;}
+.reason-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:15px;text-align:center;cursor:pointer;transition:border-color .2s;}
+.reason-card:hover,.reason-card.sel{border-color:var(--red);background:rgba(255,59,59,.05);}
+.reason-card .ico{font-size:26px;}
+.reason-card p{font-size:12px;color:var(--text-muted);margin-top:5px;font-weight:600;}
+.evidence-upload{margin:0 20px 16px;background:var(--surface2);border:2px dashed rgba(255,59,59,.3);border-radius:var(--radius);padding:18px;text-align:center;cursor:pointer;}
+.evidence-upload p{font-size:13px;color:var(--text-muted);margin-top:7px;}
+
+/* ADMIN */
+.admin-bar{background:rgba(255,184,0,.08);border-bottom:1px solid rgba(255,184,0,.2);padding:11px 20px;font-size:11px;color:var(--amber);font-weight:600;text-align:center;letter-spacing:1px;text-transform:uppercase;}
+.admin-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 20px;}
+.admin-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;}
+.admin-stat .num{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;}
+.admin-stat .num.g{color:var(--green);}
+.admin-stat .num.a{color:var(--amber);}
+.admin-stat .num.r{color:var(--red);}
+.admin-stat .lbl{font-size:12px;color:var(--text-muted);margin-top:3px;}
+.asec{padding:0 20px 18px;}
+.asec h3{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-bottom:10px;}
+.flag-item{display:flex;justify-content:space-between;align-items:center;padding:13px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;gap:10px;}
+.flag-info h5{font-size:14px;font-weight:600;}
+.flag-info p{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.ftag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-bottom:4px;display:inline-block;}
+.fstolen{background:rgba(255,59,59,.15);color:var(--red);}
+.fdrug{background:rgba(255,59,59,.2);color:var(--red);}
+.tdbtn{background:rgba(255,59,59,.15);border:1px solid rgba(255,59,59,.3);color:var(--red);padding:7px 13px;border-radius:var(--radius-sm);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.jury-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;margin-bottom:10px;}
+.jury-dots{display:flex;gap:7px;margin:9px 0;}
+.jdot{width:10px;height:10px;border-radius:50%;background:var(--surface3);}
+.jdot.cast{background:var(--green);}
+.bp-counter{background:var(--surface);border:1px solid rgba(255,215,0,.3);border-radius:var(--radius);padding:15px;text-align:center;margin-bottom:10px;}
+.bp-counter .num{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--gold);}
+.j30btn{display:block;width:100%;padding:13px;background:rgba(255,215,0,.08);border:2px solid rgba(255,215,0,.25);border-radius:var(--radius-sm);color:var(--gold);font-family:'Syne',sans-serif;font-size:13px;font-weight:800;letter-spacing:1px;cursor:not-allowed;opacity:.55;text-align:center;}
+
+/* SUCCESS */
+.success-screen{display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;text-align:center;background:radial-gradient(ellipse at 50% 30%,rgba(0,232,122,.15) 0%,transparent 60%),var(--bg);position:fixed;inset:0;z-index:200;}
+.success-screen.show{display:flex;}
+.confetti{font-size:58px;margin-bottom:16px;animation:bounce .5s ease;}
+@keyframes bounce{0%,100%{transform:scale(1);}50%{transform:scale(1.2);}}
+.spts{font-family:'Syne',sans-serif;font-size:46px;font-weight:800;color:var(--green);text-shadow:0 0 40px rgba(0,232,122,.5);}
+.success-screen h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin:10px 0;}
+.success-screen p{color:var(--text-muted);font-size:14px;line-height:1.6;margin-bottom:20px;}
+.gift-box{background:var(--surface);border:1.5px solid var(--green);border-radius:var(--radius);padding:15px 18px;width:100%;margin-bottom:14px;text-align:left;}
+.gift-box h4{font-size:14px;font-weight:700;margin-bottom:4px;}
+.gift-box p{font-size:12px;color:var(--text-muted);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:150;align-items:flex-end;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal-sheet{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:430px;padding:22px;border:1px solid var(--border);}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:11px 20px;font-size:13px;font-weight:600;z-index:300;opacity:0;pointer-events:none;transition:all .3s;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{border-color:rgba(0,232,122,.4);color:var(--green);}
+.toast.error{border-color:rgba(255,59,59,.4);color:var(--red);}
+
+textarea.field-input{resize:none;height:78px;font-size:14px;}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+<!-- SPLASH -->
+<div id="splash" class="screen active">
+  <div class="splash-inner">
+    <div class="splash-logo">THE<br>PLUG</div>
+    <div class="splash-tag">Community Marketplace · Bulawayo</div>
+    <p class="splash-sub">Sell anything. Find any gig.<br>Build your <em>Ubuntu</em> reputation.</p>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:36px;">
+      <button class="btn-primary" onclick="goto('onboard')">Get Started ›</button>
+      <button class="btn-ghost" onclick="goto('home')">Already a Plug? Sign In</button>
+    </div>
+    <p style="margin-top:36px;font-size:12px;color:var(--text-dim);">Triple-tap logo anywhere to access Admin View</p>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div id="onboard" class="screen">
+  <div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
+    <!-- Slide 1: Language -->
+    <div class="slide active" id="sl1">
+      <div class="slide-num">Step 1 of 5</div>
+      <div class="slide-emoji">🌍</div>
+      <h2>Choose your <em>language</em></h2>
+      <p>THE PLUG speaks your language. Pick the one you're most comfortable with.</p>
+      <div class="lang-grid">
+        <div class="lang-card selected" onclick="selLang(this)">
+          <div class="flag">🇿🇼</div><div class="lname">English</div><div class="lsub">English</div>
+        </div>
+        <div class="lang-card" onclick="selLang(this)">
+          <div class="flag">🇿🇼</div><div class="lname">IsiNdebele</div><div class="lsub">Ndebele</div>
+        </div>
+        <div class="lang-card" onclick="selLang(this)">
+          <div class="flag">🇿🇼</div><div class="lname">ChiShona</div><div class="lsub">Shona</div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="nxtSlide(2)" style="align-self:flex-start;">Continue ›</button>
+    </div>
+
+    <!-- Slide 2: Suburb -->
+    <div class="slide" id="sl2">
+      <div class="slide-num">Step 2 of 5</div>
+      <div class="slide-emoji">📍</div>
+      <h2>Your <em>Home Base</em></h2>
+      <p style="margin-bottom:14px;">Your neighborhood is your starting territory. Earn points to unlock more.</p>
+      <input class="suburb-search" placeholder="Search Bulawayo suburbs..." oninput="filterSubs(this.value)">
+      <div class="suburb-list" id="subList"></div>
+      <button class="btn-primary" onclick="nxtSlide(3)" style="align-self:flex-start;margin-top:14px;">Confirm ›</button>
+    </div>
+
+    <!-- Slide 3: Age -->
+    <div class="slide" id="sl3">
+      <div class="slide-num">Step 3 of 5</div>
+      <div class="slide-emoji">🛡️</div>
+      <h2>Safety <em>Check</em></h2>
+      <p style="margin-bottom:14px;">Your age determines which jobs you can access. Must be 16+.</p>
+      <div class="form-label">Date of Birth</div>
+      <input type="date" class="field-input" id="dobIn" onchange="chkAge(this.value)">
+      <div class="age-warn" id="ageWarn">⚠️ You're under 18. Only "16+ Friendly" gigs will show in your feed.</div>
+      <button class="btn-primary" onclick="nxtSlide(4)" style="align-self:flex-start;margin-top:14px;">Continue ›</button>
+    </div>
+
+    <!-- Slide 4: Plug Code -->
+    <div class="slide" id="sl4">
+      <div class="slide-num">Step 4 of 5</div>
+      <div class="slide-emoji">📜</div>
+      <h2>The <em>Plug Code</em></h2>
+      <div class="plug-code-item">
+        <div class="pcn">1</div>
+        <div><h4>Your Word is Your Bond</h4><p>Accepting a bid is a contract. No-shows = −5 Ubuntu Points.</p></div>
+      </div>
+      <div class="plug-code-item">
+        <div class="pcn">2</div>
+        <div><h4>Start Small, Grow Big</h4><p>You start in one suburb. Every 50 pts unlocks 2 more neighborhoods.</p></div>
+      </div>
+      <div class="plug-code-item">
+        <div class="pcn">3</div>
+        <div><h4>Safety First</h4><p>Meet in public. Under 18? Only do 16+ Friendly jobs.</p></div>
+      </div>
+      <div class="plug-code-item">
+        <div class="pcn">4</div>
+        <div><h4>The 7-Day Rule</h4><p>7 days to report a problem. After that, the deal is sealed.</p></div>
+      </div>
+      <div class="plug-code-item">
+        <div class="pcn">5</div>
+        <div><h4>Respect the Ubuntu</h4><p>Gifting points builds community. Scamming gets you permanently banned.</p></div>
+      </div>
+      <button class="btn-primary" onclick="nxtSlide(5)" style="align-self:flex-start;margin-top:10px;">I Agree — Take Quiz ›</button>
+    </div>
+
+    <!-- Slide 5: Quiz -->
+    <div class="slide" id="sl5">
+      <div class="slide-num">Step 5 of 5</div>
+      <div class="slide-emoji">🧠</div>
+      <h2>Quick <em>Quiz</em></h2>
+      <p style="margin-bottom:0;">Prove you understand the Ubuntu rules!</p>
+      <div class="quiz-box">
+        <h4>❓ KNOWLEDGE CHECK</h4>
+        <p>What happens if you don't show up for a job you agreed to?</p>
+        <div class="quiz-opt" onclick="quizAns(this,false)">A) Nothing happens</div>
+        <div class="quiz-opt" onclick="quizAns(this,true)">B) You lose −5 Ubuntu Points</div>
+        <div class="quiz-opt" onclick="quizAns(this,false)">C) Your account is deleted</div>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);font-style:italic;">💡 "Generosity is rewarded in secret. Keep an eye on your giving — good things come to those who share."</p>
+      <div id="quizNext" style="display:none;margin-top:14px;">
+        <button class="btn-primary" onclick="goto('home')">Enter THE PLUG 🚀</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="home" class="screen">
+  <div class="topbar">
+    <div class="logo" id="homeLogo">THE<span> PLUG</span></div>
+    <div style="display:flex;gap:10px;">
+      <div class="icon-btn" onclick="goto('search')">🔍</div>
+      <div class="icon-btn" onclick="showToast('3 new notifications!','success')" style="position:relative;">🔔<div class="badge"></div></div>
+    </div>
+  </div>
+  <div class="scroll-area">
+    <div class="feed-toggle">
+      <div class="feed-tab active" onclick="setFeed(this)">All</div>
+      <div class="feed-tab" onclick="setFeed(this)">Items</div>
+      <div class="feed-tab" onclick="setFeed(this)">Gigs</div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">⚡ Ending Soon</div>
+      <div class="see-all">See all</div>
+    </div>
+    <div class="urgency-rail">
+      <div class="urgency-card" onclick="goto('detail')">
+        <div class="urgency-img">🎮<div class="urgency-timer">47m</div></div>
+        <div class="urgency-info"><h5>PS3 + 4 Games</h5><div class="urgency-bid">$6 current</div></div>
+      </div>
+      <div class="urgency-card" onclick="goto('detail')">
+        <div class="urgency-img">📱<div class="urgency-timer">1h 12m</div></div>
+        <div class="urgency-info"><h5>Nokia 3310 Retro</h5><div class="urgency-bid">$3 current</div></div>
+      </div>
+      <div class="urgency-card" onclick="goto('detail')">
+        <div class="urgency-img">♿<div class="urgency-timer">1h 55m</div></div>
+        <div class="urgency-info"><h5>Wheelchair</h5><div class="urgency-bid">$12 current</div></div>
+      </div>
+      <div class="urgency-card" onclick="goto('detail')">
+        <div class="urgency-img">👕<div class="urgency-timer">2h 03m</div></div>
+        <div class="urgency-info"><h5>Vintage Levi's L</h5><div class="urgency-bid">$1 current</div></div>
+      </div>
+    </div>
+
+    <div class="section-header"><div class="section-title">🛒 Items</div><div class="see-all">Filter</div></div>
+    <div class="listing-card" onclick="goto('detail')">
+      <div class="listing-thumb">🎮</div>
+      <div class="listing-body">
+        <h4>PS3 Console + 4 Games</h4>
+        <div class="listing-meta"><span class="listing-price">$6.00</span><span class="listing-time">22h left</span></div>
+        <div class="listing-suburb">📍 Burnside</div>
+        <div class="ubuntu-chip"><div class="dot dot-g"></div> 145 pts · Trusted Plug</div>
+      </div>
+    </div>
+    <div class="listing-card" onclick="goto('detail')">
+      <div class="listing-thumb">♿</div>
+      <div class="listing-body">
+        <h4>Wheelchair — Good Condition</h4>
+        <div class="listing-meta"><span class="listing-price">$12.00</span><span class="listing-time">1h 55m left</span></div>
+        <div class="listing-suburb">📍 Hillside</div>
+        <div class="ubuntu-chip"><div class="dot dot-g"></div> 210 pts · Elite Plug</div>
+      </div>
+    </div>
+    <div class="listing-card" onclick="goto('detail')">
+      <div class="listing-thumb">📺</div>
+      <div class="listing-body">
+        <h4>32" LED TV — Minor Scratch</h4>
+        <div class="listing-meta"><span class="listing-price">$1.00</span><span class="listing-time">48h left</span></div>
+        <div class="listing-suburb">📍 Makokoba</div>
+        <div class="ubuntu-chip"><div class="dot dot-a"></div> 110 pts · New Plug</div>
+      </div>
+    </div>
+
+    <div class="section-header"><div class="section-title">💼 Local Gigs</div><div class="see-all">Filter</div></div>
+    <div class="gig-card" onclick="goto('gigdetail')">
+      <div class="gig-header">
+        <div class="gig-icon youth">🌿</div>
+        <div class="gig-info"><h4>Lawn Mowing — Front + Back</h4><p>Saturday morning, all tools provided.</p></div>
+      </div>
+      <div class="gig-meta">
+        <span class="gig-stat">💰 <strong>4 bids</strong></span>
+        <span class="gig-stat">📍 <strong>Cowdray Park · 1.2km</strong></span>
+        <span class="gig-stat">⏱ <strong>18h left</strong></span>
+      </div>
+      <div style="margin-top:9px;"><span class="youth-tag">✅ 16+ Friendly</span></div>
+    </div>
+    <div class="gig-card" onclick="goto('gigdetail')">
+      <div class="gig-header">
+        <div class="gig-icon">📦</div>
+        <div class="gig-info"><h4>Move 5 Boxes — 2nd to Ground Floor</h4><p>Heavy boxes, ~2 hrs. Next week Friday.</p></div>
+      </div>
+      <div class="gig-meta">
+        <span class="gig-stat">💰 <strong>7 bids</strong></span>
+        <span class="gig-stat">📍 <strong>Ascot · 3.4km</strong></span>
+        <span class="gig-stat">⏱ <strong>44h left</strong></span>
+      </div>
+    </div>
+    <div class="gig-card" onclick="goto('gigdetail')">
+      <div class="gig-header">
+        <div class="gig-icon youth">🚗</div>
+        <div class="gig-info"><h4>Car Wash + Interior Clean</h4><p>Toyota Corolla, full detail inside and out.</p></div>
+      </div>
+      <div class="gig-meta">
+        <span class="gig-stat">💰 <strong>2 bids</strong></span>
+        <span class="gig-stat">📍 <strong>Paddonhurst · 0.8km</strong></span>
+        <span class="gig-stat">⏱ <strong>6h left</strong></span>
+      </div>
+      <div style="margin-top:9px;"><span class="youth-tag">✅ 16+ Friendly</span></div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="goto('home')"><div class="nav-icon">🏠</div>Home</div>
+    <div class="nav-item" onclick="goto('search')"><div class="nav-icon">🔍</div>Search</div>
+    <div class="nav-item" onclick="showPostModal()"><div class="fab">+</div></div>
+    <div class="nav-item" onclick="goto('myplugs')"><div class="nav-icon">📋</div>My Plugs</div>
+    <div class="nav-item" onclick="goto('profile')"><div class="nav-icon">👤</div>Profile</div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div id="detail" class="screen">
+  <div class="detail-img">🎮<div class="detail-timer-tag" id="detailTimer">⏱ 22h 14m left</div></div>
+  <div class="scroll-area" style="padding-bottom:80px;">
+    <div class="detail-body">
+      <h2>PS3 Console + 4 Games</h2>
+      <div class="dprice">$6.00 <span>current bid</span></div>
+      <div class="seller-row" onclick="showToast('Viewing profile...','')">
+        <div class="sav">👨🏾</div>
+        <div style="flex:1;"><div style="font-size:14px;font-weight:600;">Chukwudi M.</div><div style="font-size:12px;color:var(--text-muted);">📍 Burnside · <span style="color:var(--green);font-weight:700;">145 pts</span> · Trusted Plug</div></div>
+        <div>›</div>
+      </div>
+      <p style="font-size:14px;color:var(--text-muted);line-height:1.7;margin-bottom:16px;">PS3 in great condition, comes with FIFA 14, GTA V, WWE 2K16, and God of War 3. Controller included. Minor scratches on casing, fully functional. Meet at Burnside Pick n Pay or Makokoba Mall.</p>
+      <div class="bid-section">
+        <h4>Place Your Bid</h4>
+        <div style="display:flex;gap:10px;">
+          <div style="flex:1;display:flex;align-items:center;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;">
+            <span style="font-size:15px;color:var(--text-muted);margin-right:7px;">$</span>
+            <input type="number" placeholder="7.00" min="7" style="flex:1;background:none;border:none;outline:none;color:var(--text);font-size:18px;font-weight:700;font-family:'Syne',sans-serif;">
+          </div>
+          <button class="btn-primary" style="padding:12px 18px;" onclick="showToast('Bid placed! You\'re winning 🎉','success')">Bid</button>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">Minimum next bid: $7.00 · Auto-bid available for longer auctions</p>
+      </div>
+      <div style="display:flex;gap:9px;">
+        <button class="btn-sm s" onclick="showToast('Listing saved!','success')">💾 Save</button>
+        <button class="btn-sm s" onclick="showToast('Auto-bid set! 🤖','success')">🤖 Auto-Bid</button>
+        <button class="btn-sm d" onclick="goto('dispute')">🚩 Report</button>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="goto('home')" style="flex:none;padding:10px 18px;font-size:14px;">‹ Back</div>
+  </div>
+</div>
+
+<!-- GIG DETAIL -->
+<div id="gigdetail" class="screen">
+  <div class="topbar">
+    <div style="cursor:pointer;font-size:20px;" onclick="goto('home')">‹</div>
+    <div class="logo" style="font-size:16px;">GIG DETAIL</div>
+    <div class="icon-btn" onclick="showToast('Saved!','success')">💾</div>
+  </div>
+  <div class="scroll-area">
+    <div style="padding:18px 20px 0;">
+      <div class="gig-icon youth" style="width:56px;height:56px;border-radius:14px;font-size:28px;margin-bottom:14px;">🌿</div>
+      <h2 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;">Lawn Mowing — Front + Back</h2>
+      <p style="font-size:14px;color:var(--text-muted);margin-top:8px;line-height:1.7;">Need someone to mow front and back lawn. All tools (mower, rake) provided. About 2 hours. Available Saturday 8AM–12PM.</p>
+      <div style="display:flex;gap:9px;margin-top:10px;flex-wrap:wrap;">
+        <span class="youth-tag">✅ 16+ Friendly</span>
+        <span class="gig-stat">📍 Cowdray Park · 1.2km</span>
+        <span class="gig-stat">⏱ 18h left</span>
+      </div>
+      <div class="seller-row" style="margin-top:14px;">
+        <div class="sav">👩🏾</div>
+        <div style="flex:1;"><div style="font-size:14px;font-weight:600;">Nomsa D. (Seeker)</div><div style="font-size:12px;color:var(--text-muted);">📍 Cowdray Park · <span style="color:var(--green);font-weight:700;">187 pts</span> · Trusted Plug</div></div>
+      </div>
+    </div>
+    <div class="section-header" style="padding-bottom:4px;"><div class="section-title">Bids (Blind Market)</div></div>
+    <div style="padding:0 20px;">
+      <div class="plug-code-item" style="background:var(--surface2);">
+        <div style="font-size:18px;">1️⃣</div>
+        <div style="flex:1;"><h4>Thabiso K. — <span style="color:var(--green);">$15</span></h4><p>Ubuntu: 125 pts · Cowdray Park</p></div>
+        <div style="font-size:11px;color:var(--text-dim);">First</div>
+      </div>
+      <div class="plug-code-item" style="background:var(--surface2);">
+        <div style="font-size:18px;">2️⃣</div>
+        <div style="flex:1;"><h4>Sipho M. — <span style="color:var(--green);">$12</span></h4><p>Ubuntu: 340 pts · Burnside · ⭐ Mod</p></div>
+        <div style="font-size:11px;color:var(--amber);">Lowest</div>
+      </div>
+      <div class="plug-code-item" style="background:var(--surface2);">
+        <div style="font-size:18px;">3️⃣</div>
+        <div style="flex:1;"><h4>Anele R. — <span style="color:var(--green);">$20</span></h4><p>Ubuntu: 95 pts · Hillside</p></div>
+      </div>
+    </div>
+    <div style="padding:14px 20px;">
+      <div class="bid-section">
+        <h4>Submit Your Bid</h4>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:11px;">Name your price. Seeker chooses by price AND Ubuntu score.</p>
+        <div style="display:flex;gap:10px;">
+          <div style="flex:1;display:flex;align-items:center;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;">
+            <span style="color:var(--text-muted);margin-right:6px;">$</span>
+            <input type="number" placeholder="e.g. 18" style="flex:1;background:none;border:none;outline:none;color:var(--text);font-size:18px;font-weight:700;font-family:'Syne',sans-serif;">
+          </div>
+          <button class="btn-primary" style="padding:12px 18px;" onclick="showToast('Bid submitted! 🤝','success')">Bid</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div id="search" class="screen">
+  <div class="topbar">
+    <div class="logo" id="searchLogo">THE<span> PLUG</span></div>
+    <div class="icon-btn">⚙️</div>
+  </div>
+  <div class="scroll-area">
+    <div class="search-bar-wrap">
+      <div class="search-bar">
+        <span>🔍</span>
+        <input placeholder="What are you looking for? / Ufuna chii?">
+      </div>
+    </div>
+    <div class="filter-row">
+      <div class="fchip active" onclick="togFilter(this)">All</div>
+      <div class="fchip" onclick="togFilter(this)">Items</div>
+      <div class="fchip" onclick="togFilter(this)">Gigs</div>
+      <div class="fchip" onclick="togFilter(this)">16+ Friendly</div>
+      <div class="fchip" onclick="togFilter(this)">Ending Soon</div>
+      <div class="fchip" onclick="togFilter(this)">150+ Ubuntu</div>
+    </div>
+    <div class="section-header" style="padding-bottom:4px;"><div class="section-title">My Neighborhoods</div></div>
+    <div style="padding:0 20px;">
+      <div class="suburb-check">
+        <div><div class="sc-label">🏠 Makokoba <span style="font-size:11px;color:var(--green);">Home Base</span></div><div class="sc-sub">Central · 14 active plugs</div></div>
+        <div class="chk on">✓</div>
+      </div>
+      <div class="suburb-check" onclick="togChk(this)">
+        <div><div class="sc-label">Burnside</div><div class="sc-sub">North · 8 active plugs</div></div>
+        <div class="chk on">✓</div>
+      </div>
+      <div class="suburb-check" onclick="togChk(this)">
+        <div><div class="sc-label">Hillside</div><div class="sc-sub">East · 6 active plugs</div></div>
+        <div class="chk on">✓</div>
+      </div>
+      <div class="suburb-check" onclick="showToast('Earn 12 more points to unlock Cowdray Park!','error')">
+        <div><div class="sc-label">🔒 Cowdray Park</div><div class="sc-sub">Earn 12 more pts to unlock</div></div>
+        <div class="chk locked">🔒</div>
+      </div>
+      <div class="suburb-check" onclick="showToast('Keep earning Ubuntu points to expand your territory!','error')">
+        <div><div class="sc-label">🔒 Ascot</div><div class="sc-sub">Earn 50 pts to unlock next 2</div></div>
+        <div class="chk locked">🔒</div>
+      </div>
+    </div>
+    <div class="section-header" style="padding-bottom:4px;"><div class="section-title">Ubuntu Score Filter</div></div>
+    <div style="padding:0 20px 20px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;">
+          <span style="color:var(--text-muted);">Minimum seller score:</span>
+          <span style="color:var(--green);font-weight:700;" id="ubSliderVal">100 pts</span>
+        </div>
+        <input type="range" min="50" max="300" value="100" style="width:100%;accent-color:var(--green);" oninput="document.getElementById('ubSliderVal').textContent=this.value+' pts'">
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="goto('home')"><div class="nav-icon">🏠</div>Home</div>
+    <div class="nav-item active" onclick="goto('search')"><div class="nav-icon">🔍</div>Search</div>
+    <div class="nav-item" onclick="showPostModal()"><div class="fab">+</div></div>
+    <div class="nav-item" onclick="goto('myplugs')"><div class="nav-icon">📋</div>My Plugs</div>
+    <div class="nav-item" onclick="goto('profile')"><div class="nav-icon">👤</div>Profile</div>
+  </div>
+</div>
+
+<!-- POST -->
+<div id="postlisting" class="screen">
+  <div class="topbar">
+    <div style="cursor:pointer;font-size:20px;" onclick="goto('home')">‹</div>
+    <div class="logo" style="font-size:16px;">POST A PLUG</div>
+    <div></div>
+  </div>
+  <div class="scroll-area">
+    <div style="padding:18px 20px;">
+      <div class="post-toggle">
+        <div class="ptype active" id="pt1" onclick="setPType('item')">🛒 Selling Item</div>
+        <div class="ptype" id="pt2" onclick="setPType('gig')">💼 Posting Gig</div>
+      </div>
+      <div class="upload-zone" onclick="showToast('Camera / Gallery opened','')">
+        <div style="font-size:30px;">📷</div>
+        <p>Tap to add photos (max 3)</p>
+        <p style="font-size:11px;">Auto-compressed · Deleted after 30 days</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input class="field-input" placeholder="What are you selling / what's the job?" id="postTitle">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="field-input" placeholder="Item condition or job requirements..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select class="form-select">
+          <option>📱 Tech & Electronics</option>
+          <option>🏠 Home & Furniture</option>
+          <option>👕 Clothing & Fashion</option>
+          <option>🔧 Tools & Equipment</option>
+          <option>♿ Medical & Mobility</option>
+          <option>🎮 Gaming & Toys</option>
+          <option>🌿 Gardening & Outdoors</option>
+          <option>📦 Moving & Labour</option>
+          <option>🚗 Vehicle Services</option>
+          <option>🧹 Cleaning</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duration</label>
+        <div class="dur-grid">
+          <div class="dur-card sel" onclick="selDur(this)"><div class="h">24</div><div class="hl">hours</div></div>
+          <div class="dur-card" onclick="selDur(this)"><div class="h">48</div><div class="hl">hours</div></div>
+          <div class="dur-card" onclick="selDur(this)"><div class="h">72</div><div class="hl">hours</div></div>
+        </div>
+      </div>
+      <div class="toggle-row" id="youthRow">
+        <div><div style="font-size:14px;font-weight:600;">16+ Friendly Job</div><div style="font-size:12px;color:var(--text-muted);">Tick so teens can see this gig</div></div>
+        <div class="tsw" onclick="this.classList.toggle('on')"><div class="tkn"></div></div>
+      </div>
+      <div class="price-note" id="pnItem">Auction starts at <strong>$1</strong><br><span style="font-size:12px;">Bidders drive the price up</span></div>
+      <div class="price-note" id="pnGig" style="display:none;"><strong>Blind Market</strong><br><span style="font-size:12px;">No starting price — bidders name their rate</span></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;font-size:16px;padding:16px;" onclick="doPost()">Go Live 🚀</button>
+    </div>
+  </div>
+</div>
+
+<!-- MY PLUGS -->
+<div id="myplugs" class="screen">
+  <div class="topbar">
+    <div class="logo" id="myplugLogo">MY PLUGS</div>
+    <div class="icon-btn" onclick="showToast('All caught up!','success')">📬</div>
+  </div>
+  <div class="scroll-area">
+    <div class="plugs-tabs">
+      <div class="plugs-tab active" onclick="setPlugTab(this,'req')">📥 My Requests</div>
+      <div class="plugs-tab" onclick="setPlugTab(this,'hus')">💪 My Hustle</div>
+    </div>
+
+    <div id="reqPanel" class="plugs-panel active">
+      <div class="plug-item">
+        <div class="plug-item-header">
+          <div><div class="plug-item-title">🎮 PS3 Console + 4 Games</div><div style="font-size:12px;color:var(--text-muted);margin-top:3px;">📍 Burnside · You bid $8</div></div>
+          <div class="pstatus s-active">WINNING</div>
+        </div>
+        <div class="ctimer">⏱ 22h 14m remaining</div>
+        <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:9px 13px;margin-bottom:10px;font-size:13px;">Current bid: <span style="color:var(--green);font-weight:700;">$8.00</span> (you) · 3 other bidders</div>
+        <div class="plug-acts">
+          <button class="btn-sm s" onclick="showToast('Auto-bid updated!','success')">Auto-Bid</button>
+          <button class="btn-sm d" onclick="showToast('Bid withdrawn','error')">Withdraw</button>
+        </div>
+      </div>
+
+      <div class="plug-item">
+        <div class="plug-item-header">
+          <div><div class="plug-item-title">🌿 Lawn Mowing — Cowdray Park</div><div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Sipho M. accepted · $12</div></div>
+          <div class="pstatus s-pending">IN PROGRESS</div>
+        </div>
+        <div class="swap-code">
+          <div class="swap-num">8 8 2 1</div>
+          <div class="swap-lbl">Show this code to Sipho when job is done ↑</div>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">⚠️ Screenshot for your records — photos purge after 30 days</p>
+        <div class="plug-acts">
+          <button class="btn-sm p" onclick="showSuccess()">✅ Complete</button>
+          <button class="btn-sm s" onclick="showToast('Chat opened!','success')">💬 Chat</button>
+          <button class="btn-sm d" onclick="goto('dispute')">🛑 Dispute</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="husPanel" class="plugs-panel">
+      <div class="plug-item">
+        <div class="plug-item-header">
+          <div><div class="plug-item-title">📺 32" LED TV</div><div style="font-size:12px;color:var(--text-muted);margin-top:3px;">📍 Makokoba · 5 bids received</div></div>
+          <div class="pstatus s-active">LIVE</div>
+        </div>
+        <div class="ctimer">⏱ 47h 33m remaining</div>
+        <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:9px 13px;margin-bottom:10px;font-size:13px;">Highest bid: <span style="color:var(--green);font-weight:700;">$23.00</span> · Started at $1.00</div>
+        <div class="plug-acts">
+          <button class="btn-sm p" onclick="showToast('Bid accepted! Swap code sent to winner.','success')">Accept Bid</button>
+          <button class="btn-sm s">View All Bids</button>
+        </div>
+      </div>
+
+      <div class="plug-item">
+        <div class="plug-item-header">
+          <div><div class="plug-item-title">📦 Move 5 Boxes — Ascot</div><div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Your bid: <span style="color:var(--green);">$18</span> · 7 others bidding</div></div>
+          <div class="pstatus s-pending">AWAITING</div>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Seeker hasn't selected yet. 44h left on the gig.</p>
+        <div class="plug-acts">
+          <button class="btn-sm s" onclick="showToast('Bid updated!','success')">Edit Bid</button>
+          <button class="btn-sm d" onclick="showToast('Bid withdrawn','error')">Withdraw</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="goto('home')"><div class="nav-icon">🏠</div>Home</div>
+    <div class="nav-item" onclick="goto('search')"><div class="nav-icon">🔍</div>Search</div>
+    <div class="nav-item" onclick="showPostModal()"><div class="fab">+</div></div>
+    <div class="nav-item active" onclick="goto('myplugs')"><div class="nav-icon">📋</div>My Plugs</div>
+    <div class="nav-item" onclick="goto('profile')"><div class="nav-icon">👤</div>Profile</div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div id="profile" class="screen">
+  <div class="topbar">
+    <div class="logo" id="profLogo">PROFILE</div>
+    <div style="display:flex;gap:8px;">
+      <div class="icon-btn" onclick="showToast('Settings','')">⚙️</div>
+      <div class="icon-btn" onclick="showToast('Vacation Mode ON — listings paused 🏖️','success')">🏖️</div>
+    </div>
+  </div>
+  <div class="scroll-area">
+    <div class="profile-header">
+      <div class="avatar">😊</div>
+      <div class="profile-name">Barry M.</div>
+      <div class="profile-suburb">📍 Makokoba · Bulawayo</div>
+      <div style="margin-top:8px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <span class="ubuntu-chip"><div class="dot dot-g"></div> Trusted Plug</span>
+        <span class="ubuntu-chip"><div class="dot dot-g"></div> ✅ ID Verified</span>
+      </div>
+    </div>
+    <div class="ubuntu-meter">
+      <div class="meter-top">
+        <span class="meter-pts">138</span>
+        <span class="meter-rank">🥈 Silver Plug</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" style="width:46%;"></div></div>
+      <div class="meter-sub">12 pts to next unlock · Milestone: 150 pts → 2 new neighborhoods</div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="num">14</div><div class="lbl">Total Deals</div></div>
+      <div class="stat-card"><div class="num">6</div><div class="lbl">Jobs Done</div></div>
+      <div class="stat-card"><div class="num">8</div><div class="lbl">Items Sold</div></div>
+    </div>
+    <div style="padding:4px 20px 6px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);">Badges</div>
+    <div class="badges-row">
+      <div class="badge-chip green">⚡ Fast Responder</div>
+      <div class="badge-chip green">✅ ID Verified</div>
+      <div class="badge-chip">🌱 Seedling Plug</div>
+      <div class="badge-chip" style="opacity:.4;">⭐ Mod (need 300 pts)</div>
+    </div>
+    <div style="padding:4px 20px 6px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);">Community Reviews</div>
+    <div class="reviews-list">
+      <div class="review-item">
+        <div class="review-header"><div class="review-name">👩🏾 Nomsa D.</div><div class="review-pts">+5 Ubuntu</div></div>
+        <div class="review-text">"Showed up on time, mowed perfectly. Very professional!"</div>
+        <div class="review-date">2 weeks ago · Lawn Mowing Gig</div>
+      </div>
+      <div class="review-item">
+        <div class="review-header"><div class="review-name">👨🏿 Chidi O.</div><div class="review-pts">+5 Ubuntu</div></div>
+        <div class="review-text">"Fast delivery, item as described. Highly recommend Barry."</div>
+        <div class="review-date">1 month ago · LED TV Sale</div>
+      </div>
+      <div class="review-item">
+        <div class="review-header"><div class="review-name">👦🏽 Sipho M.</div><div class="review-pts">+5 Ubuntu</div></div>
+        <div class="review-text">"Paid as agreed immediately. Great to work with."</div>
+        <div class="review-date">1 month ago · Box Moving</div>
+      </div>
+    </div>
+    <div style="height:20px;"></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="goto('home')"><div class="nav-icon">🏠</div>Home</div>
+    <div class="nav-item" onclick="goto('search')"><div class="nav-icon">🔍</div>Search</div>
+    <div class="nav-item" onclick="showPostModal()"><div class="fab">+</div></div>
+    <div class="nav-item" onclick="goto('myplugs')"><div class="nav-icon">📋</div>My Plugs</div>
+    <div class="nav-item active" onclick="goto('profile')"><div class="nav-icon">👤</div>Profile</div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin" class="screen">
+  <div class="topbar">
+    <div style="cursor:pointer;font-size:20px;" onclick="goto('home')">‹</div>
+    <div class="logo" style="font-size:15px;color:var(--amber);">COMMANDER VIEW</div>
+    <div></div>
+  </div>
+  <div class="admin-bar">⚠️ Admin Access — Owner Only</div>
+  <div class="scroll-area">
+    <div class="admin-stat-grid">
+      <div class="admin-stat"><div class="num g">47</div><div class="lbl">Live Auctions</div></div>
+      <div class="admin-stat"><div class="num g">23</div><div class="lbl">Active Gigs</div></div>
+      <div class="admin-stat"><div class="num a">5</div><div class="lbl">Open Disputes</div></div>
+      <div class="admin-stat"><div class="num r">2</div><div class="lbl">Red Flags</div></div>
+    </div>
+
+    <div class="asec">
+      <h3>🚨 Red Flag Queue</h3>
+      <div class="flag-item">
+        <div class="flag-info"><div class="ftag fstolen">STOLEN GOODS</div><h5>"Samsung Galaxy S20"</h5><p>3 reports · Makokoba · Ubuntu: 42</p></div>
+        <button class="tdbtn" onclick="showToast('Listing removed. Seller banned. Buyer pts restored.','success')">TAKEDOWN</button>
+      </div>
+      <div class="flag-item">
+        <div class="flag-info"><div class="ftag fdrug">PROHIBITED</div><h5>"Special Herbs Package"</h5><p>Keyword auto-flagged + 1 report</p></div>
+        <button class="tdbtn" onclick="showToast('Listing removed. Account frozen.','error')">TAKEDOWN</button>
+      </div>
+    </div>
+
+    <div class="asec">
+      <h3>⚖️ Jury Disputes</h3>
+      <div class="jury-item">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div><h5 style="font-size:14px;font-weight:600;">Lawn Mowing No-Show</h5><p style="font-size:12px;color:var(--text-muted);">Cowdray Park · Filed 6h ago</p></div>
+          <span class="pstatus s-pending">PENDING</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin:8px 0;">Jury votes (2/3 needed):</div>
+        <div class="jury-dots">
+          <div class="jdot cast"></div><div class="jdot cast"></div><div class="jdot"></div>
+          <span style="font-size:12px;color:var(--text-muted);margin-left:6px;">Seeker winning · 1 vote remaining</span>
+        </div>
+        <button class="btn-sm s" style="width:100%;margin-top:9px;" onclick="showToast('Verdict applied: Provider −5 pts. Case closed.','success')">Admin Final Call</button>
+      </div>
+    </div>
+
+    <div class="asec">
+      <h3>🏆 Jan 30th Big Plug</h3>
+      <div class="bp-counter"><div class="num">7</div><div style="font-size:13px;color:var(--text-muted);margin-top:3px;">users on track for the secret reward</div></div>
+      <div class="j30btn">🔒 LOCKED UNTIL JAN 30TH</div>
+    </div>
+
+    <div class="asec">
+      <h3>📊 Neighborhood Health</h3>
+      <div style="display:flex;flex-direction:column;gap:7px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);">
+          <div><div style="font-size:14px;font-weight:600;">Makokoba 🔥</div><div style="font-size:12px;color:var(--text-muted);">14 active · Avg Ubuntu: 128</div></div>
+          <span style="color:var(--green);font-weight:700;font-size:12px;">HOT</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);">
+          <div><div style="font-size:14px;font-weight:600;">Hillside</div><div style="font-size:12px;color:var(--text-muted);">6 active · Avg Ubuntu: 145</div></div>
+          <span style="color:var(--amber);font-weight:700;font-size:12px;">WARM</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);">
+          <div><div style="font-size:14px;font-weight:600;">Ascot</div><div style="font-size:12px;color:var(--text-muted);">1 active · Avg Ubuntu: 102</div></div>
+          <span style="color:var(--text-muted);font-weight:700;font-size:12px;">QUIET</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="asec">
+      <h3>💾 Storage Monitor</h3>
+      <div class="ubuntu-meter" style="margin:0;">
+        <div class="meter-top"><span style="font-size:14px;font-weight:600;">Handshake Photos</span><span style="font-size:13px;color:var(--text-muted);">47.2 MB</span></div>
+        <div class="prog-bar"><div class="prog-fill" style="width:9%;"></div></div>
+        <div class="meter-sub">Next purge: 23 days · Disputed photos held until resolved</div>
+      </div>
+    </div>
+    <div style="height:20px;"></div>
+  </div>
+</div>
+
+<!-- DISPUTE -->
+<div id="dispute" class="screen">
+  <div class="topbar">
+    <div style="cursor:pointer;font-size:20px;" onclick="goto('myplugs')">‹</div>
+    <div class="logo" style="font-size:16px;color:var(--red);">REPORT ISSUE</div>
+    <div></div>
+  </div>
+  <div class="scroll-area">
+    <div class="dispute-hdr">
+      <h2>🛑 File a Dispute</h2>
+      <p>7-day window from deal date. Community Jury (300+ pts) will review.</p>
+    </div>
+    <div style="padding:14px 20px 6px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);">What went wrong?</div>
+    <div class="reason-grid">
+      <div class="reason-card" onclick="selReason(this)"><div class="ico">👻</div><p>No-Show / Ghosting</p></div>
+      <div class="reason-card" onclick="selReason(this)"><div class="ico">💸</div><p>Payment Not Made</p></div>
+      <div class="reason-card" onclick="selReason(this)"><div class="ico">📦</div><p>Item Not As Described</p></div>
+      <div class="reason-card" onclick="selReason(this)"><div class="ico">🚨</div><p>Stolen Goods</p></div>
+      <div class="reason-card" onclick="selReason(this)"><div class="ico">⚠️</div><p>Job Not Completed</p></div>
+      <div class="reason-card" onclick="selReason(this)"><div class="ico">😤</div><p>Harassment</p></div>
+    </div>
+    <div style="padding:0 20px 8px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);">Upload Evidence</div>
+    <div class="evidence-upload" onclick="showToast('Gallery opened','')">
+      <div style="font-size:30px;">📸</div>
+      <p>Tap to upload screenshots or photos</p>
+      <p style="font-size:11px;margin-top:4px;">Keep personal backups — evidence purges after 30 days</p>
+    </div>
+    <div style="padding:0 20px 16px;">
+      <div class="form-label">Your Statement <span style="color:var(--text-dim);">(250 chars max)</span></div>
+      <textarea class="field-input" placeholder="Describe what happened clearly..." maxlength="250" style="height:90px;"></textarea>
+      <div style="margin-top:14px;background:rgba(255,184,0,.08);border:1px solid rgba(255,184,0,.2);border-radius:var(--radius-sm);padding:13px;font-size:13px;color:var(--amber);">
+        ⚖️ 3 anonymous Community Mods (300+ pts) will review. Bad faith disputes cost you points too.
+      </div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:14px;background:var(--red);box-shadow:0 4px 20px rgba(255,59,59,.3);" onclick="submitDispute()">Submit Dispute</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS OVERLAY -->
+<div class="success-screen" id="successScreen">
+  <div class="confetti">🎉</div>
+  <div class="spts">+5</div>
+  <div style="font-size:14px;color:var(--text-muted);margin-bottom:4px;">Ubuntu Points Earned</div>
+  <h2>Deal Sealed in Cowdray Park!</h2>
+  <p>The Swap Code matched. Sipho confirmed the job is done. Your Ubuntu reputation grows stronger.</p>
+  <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">You've gifted <span style="color:var(--green);font-weight:700;">12/50</span> points this year 🌱</div>
+  <div class="gift-box">
+    <h4>🫶 Show Ubuntu — Gift a Point?</h4>
+    <p>Gift 1 point to Sipho for exceptional work. Generosity builds the community.</p>
+    <button class="btn-primary" style="margin-top:12px;width:100%;justify-content:center;" id="giftBtn" onclick="doGift()">Gift 1 Ubuntu Point to Sipho</button>
+  </div>
+  <div style="font-size:12px;color:var(--text-muted);margin-bottom:18px;padding:0 10px;">📸 Screenshot this screen — evidence photos delete in 30 days</div>
+  <button class="btn-outline" style="width:100%;justify-content:center;" onclick="closeSuccess()">Return Home</button>
+</div>
+
+<!-- POST MODAL -->
+<div class="modal-overlay" id="postModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:16px;">What are you plugging?</h3>
+    <div style="display:flex;flex-direction:column;gap:11px;">
+      <button class="btn-primary" style="width:100%;justify-content:center;font-size:16px;padding:18px;" onclick="closeModal('postModal');goto('postlisting');setPType('item');">🛒 I'm Selling an Item</button>
+      <button class="btn-outline" style="width:100%;justify-content:center;font-size:16px;padding:17px;" onclick="closeModal('postModal');goto('postlisting');setPType('gig');">💼 I'm Posting a Gig</button>
+      <button class="btn-ghost" style="width:100%;text-align:center;" onclick="closeModal('postModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// DATA
+const SUBURBS=[
+  {n:'Ascot',z:'North'},{n:'Barbourfields',z:'West'},{n:'Burnside',z:'North'},
+  {n:'Cowdray Park',z:'South'},{n:'Emakhandeni',z:'East'},{n:'Entumbane',z:'South'},
+  {n:'Famona',z:'Central'},{n:'Gwabalanda',z:'South'},{n:'Hillside',z:'East'},
+  {n:'Hyde Park',z:'North'},{n:'Iminyela',z:'South'},{n:'Kelvin',z:'East'},
+  {n:'Killarney',z:'North'},{n:'Luveve',z:'South'},{n:'Magwegwe',z:'West'},
+  {n:'Makokoba',z:'Central'},{n:'Mabutweni',z:'South'},{n:'Mpopoma',z:'West'},
+  {n:'Nkulumane',z:'West'},{n:'Nketa',z:'South'},{n:'Paddonhurst',z:'East'},
+  {n:'Pumula',z:'South'},{n:'Richmond',z:'Central'},{n:'Selborne Park',z:'Central'},
+  {n:'Sizinda',z:'West'},{n:'Sunninghill',z:'North'},{n:'Tshabalala',z:'South'},
+  {n:'Woodville',z:'East'}
+];
+let pickedSub=null,quizDone=false,tapLog=0;
+
+// NAV
+function goto(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('successScreen').classList.remove('show');
+}
+
+// ONBOARD
+function nxtSlide(n){
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sl'+n).classList.add('active');
+  if(n===2)renderSubs('');
+}
+function selLang(el){document.querySelectorAll('.lang-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');}
+function renderSubs(f){
+  const l=document.getElementById('subList');
+  const d=SUBURBS.filter(s=>s.n.toLowerCase().includes(f.toLowerCase()));
+  l.innerHTML=d.map(s=>`<div class="suburb-item${pickedSub===s.n?' selected':''}" onclick="pickSub('${s.n}',this)"><div><div style="font-weight:600;">${s.n}</div><div class="suburb-zone">${s.z} Bulawayo</div></div><div style="color:var(--green);">${pickedSub===s.n?'✓':''}</div></div>`).join('');
+}
+function filterSubs(v){renderSubs(v);}
+function pickSub(n,el){
+  pickedSub=n;
+  document.querySelectorAll('.suburb-item').forEach(i=>{i.classList.remove('selected');i.querySelector('div:last-child').textContent='';});
+  el.classList.add('selected');el.querySelector('div:last-child').textContent='✓';
+}
+function chkAge(v){
+  if(!v)return;
+  const age=(new Date()-new Date(v))/(365.25*24*60*60*1000);
+  document.getElementById('ageWarn').style.display=(age<18&&age>=16)?'block':'none';
+}
+function quizAns(el,ok){
+  if(quizDone)return;
+  quizDone=true;
+  el.classList.add(ok?'correct':'wrong');
+  if(!ok){setTimeout(()=>{el.classList.remove('wrong');quizDone=false;showToast('Wrong! Try again 🤔','error');},1200);return;}
+  showToast('Correct! Welcome bonus: +10 Ubuntu 🎉','success');
+  setTimeout(()=>{document.getElementById('quizNext').style.display='block';},800);
+}
+
+// HOME
+function setFeed(el){document.querySelectorAll('.feed-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');showToast('Showing: '+el.textContent,'');}
+
+// SEARCH
+function togFilter(el){el.classList.toggle('active');}
+function togChk(row){const c=row.querySelector('.chk');c.classList.toggle('on');c.textContent=c.classList.contains('on')?'✓':'';}
+
+// POST
+function showPostModal(){document.getElementById('postModal').classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function setPType(type){
+  document.getElementById('pt1').classList.toggle('active',type==='item');
+  document.getElementById('pt2').classList.toggle('active',type==='gig');
+  document.getElementById('pnItem').style.display=type==='item'?'block':'none';
+  document.getElementById('pnGig').style.display=type==='gig'?'block':'none';
+  document.getElementById('youthRow').style.display=type==='gig'?'flex':'none';
+}
+function selDur(el){document.querySelectorAll('.dur-card').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
+function doPost(){
+  const t=document.getElementById('postTitle').value;
+  if(!t.trim()){showToast('Please add a title!','error');return;}
+  showToast('Your Plug is LIVE! 🚀','success');
+  setTimeout(()=>goto('home'),1500);
+}
+
+// MY PLUGS
+function setPlugTab(el,panel){
+  document.querySelectorAll('.plugs-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  document.querySelectorAll('.plugs-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(panel+'Panel').classList.add('active');
+}
+
+// DISPUTE
+function selReason(el){document.querySelectorAll('.reason-card').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
+function submitDispute(){showToast('Dispute filed. Jury notified. Accounts frozen. 🔒','error');setTimeout(()=>goto('myplugs'),2000);}
+
+// SUCCESS
+function showSuccess(){document.getElementById('successScreen').classList.add('show');}
+function closeSuccess(){document.getElementById('successScreen').classList.remove('show');goto('home');}
+function doGift(){
+  showToast('1 Ubuntu Point gifted to Sipho 🫶','success');
+  const b=document.getElementById('giftBtn');
+  b.textContent='✓ Gifted! (13/50 this year)';b.style.opacity='.5';b.disabled=true;
+}
+
+// TOAST
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show'+(type?' '+type:'');
+  clearTimeout(window._tt);
+  window._tt=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// LIVE TIMER
+let h=22,m=14;
+setInterval(()=>{m--;if(m<0){m=59;h--;}const el=document.getElementById('detailTimer');if(el)el.textContent='⏱ '+h+'h '+(m<10?'0':'')+m+'m left';},60000);
+
+// ADMIN TRIPLE TAP
+['homeLogo','searchLogo','myplugLogo','profLogo'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('click',()=>{
+    tapLog++;clearTimeout(window._tapT);
+    if(tapLog>=3){tapLog=0;goto('admin');showToast('Admin mode activated','');}
+    window._tapT=setTimeout(()=>tapLog=0,900);
+  });
+});
+
+// Init
+setPType('item');
+renderSubs('');
+</script>
+</body>
+</html>
