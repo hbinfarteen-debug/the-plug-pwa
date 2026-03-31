@@ -13,6 +13,7 @@ export default function Onboard({ showToast }) {
   const [isLogin, setIsLogin] = useState(false);
 
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [nameError, setNameError] = useState('');
   const [checkingName, setCheckingName] = useState(false);
@@ -24,7 +25,12 @@ export default function Onboard({ showToast }) {
   const nxt = (n) => setSlide(n);
 
   const handleAuth = async () => {
-    if (!fullName || fullName.length < 3) return setNameError('Name too short');
+    if (isLogin) {
+      if (!fullName) return setNameError('Enter your Phone or Plug Name');
+    } else {
+      if (!fullName || fullName.length < 3) return setNameError('Name too short');
+      if (!phone || phone.length < 8) return setNameError('Enter a valid phone number');
+    }
     if (!password || password.length < 4) return setNameError('Password too short (min 4)');
     
     setCheckingName(true);
@@ -74,7 +80,7 @@ export default function Onboard({ showToast }) {
         body: JSON.stringify({
           fullname: fullName,
           password: password,
-          phone: '263' + Math.floor(Math.random()*100000000),
+          phone: phone,
           dob: '1990-01-01',
           deviceid: 'dev_' + Math.random().toString(36).substr(2, 9),
           homebase: suburb || 'Makokoba'
@@ -129,10 +135,10 @@ export default function Onboard({ showToast }) {
             <p style={{marginBottom:'14px'}}>{isLogin ? 'Enter your details to enter the marketplace.' : 'Pick a unique name. Respectable names help build Ubuntu trust faster!'}</p>
             
             <div className="form-group" style={{marginBottom:'15px'}}>
-              <label style={{fontSize:'12px', color:'var(--text-muted)'}}>Plug Name</label>
+              <label style={{fontSize:'12px', color:'var(--text-muted)'}}>{isLogin ? 'Phone or Plug Name' : 'Plug Name'}</label>
               <input 
                 className="field-input" 
-                placeholder="e.g. Brave_Plug_Bulawayo" 
+                placeholder={isLogin ? "+263..." : "e.g. Brave_Plug_Bulawayo"} 
                 value={fullName}
                 onChange={(e) => {
                   setFullName(e.target.value);
@@ -140,6 +146,18 @@ export default function Onboard({ showToast }) {
                 }}
               />
             </div>
+
+            {!isLogin && (
+              <div className="form-group" style={{marginBottom:'15px'}}>
+                <label style={{fontSize:'12px', color:'var(--text-muted)'}}>Mobile Number (EcoCash/OneMoney)</label>
+                <input 
+                  className="field-input" 
+                  placeholder="e.g. +263771234567" 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+            )}
 
             <div className="form-group" style={{marginBottom:'15px'}}>
               <label style={{fontSize:'12px', color:'var(--text-muted)'}}>Password</label>
