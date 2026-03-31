@@ -24,7 +24,9 @@ app.post('/api/auth/register', async (req, res) => {
                 homebase as "homebase", 
                 ubuntupoints as "ubuntuPoints", 
                 ubuntupoints as "ubuntupoints", 
-                phone, dob, deviceid
+                phone, dob, deviceid,
+                avatarurl as "avatarUrl",
+                avatarurl as "avatarurl"
     `, [fullname, phone, dob, deviceid, homebase, password]);
     res.json(result.rows[0]);
   } catch (err) {
@@ -44,7 +46,9 @@ app.post('/api/auth/login', async (req, res) => {
              homebase as "homebase", 
              ubuntupoints as "ubuntuPoints", 
              ubuntupoints as "ubuntupoints", 
-             password, phone, dob, deviceid
+             password, phone, dob, deviceid,
+             avatarurl as "avatarUrl",
+             avatarurl as "avatarurl"
       FROM users WHERE phone = $1 OR fullname = $1
     `, [phone]);
     if (result.rows.length === 0) return res.status(400).json({ error: 'User not found' });
@@ -71,7 +75,7 @@ app.get('/api/auth/check-name/:name', async (req, res) => {
 
 app.get('/api/users/:id', async (req, res) => {
   try {
-    const result = await db.query('SELECT id, fullname, fullname as "fullName", homebase, homebase as "homeBase", ubuntupoints, ubuntupoints as "ubuntuPoints" FROM users WHERE id = $1', [req.params.id]);
+    const result = await db.query('SELECT id, fullname, fullname as "fullName", homebase, homebase as "homeBase", ubuntupoints, ubuntupoints as "ubuntuPoints", avatarurl as "avatarUrl", avatarurl as "avatarurl" FROM users WHERE id = $1', [req.params.id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     res.json(result.rows[0]);
   } catch (err) {
@@ -281,6 +285,19 @@ app.post('/api/messages', async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// User Profile Updates
+app.post('/api/users/:id/avatar', async (req, res) => {
+  const { avatarUrl } = req.body;
+  const { id } = req.params;
+  try {
+    await db.query('UPDATE users SET avatarurl = $1 WHERE id = $2', [avatarUrl, id]);
+    res.json({ success: true, avatarUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update avatar' });
   }
 });
 

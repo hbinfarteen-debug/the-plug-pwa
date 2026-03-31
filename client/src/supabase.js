@@ -33,3 +33,25 @@ export const uploadListingImages = async (files) => {
   }
   return urls;
 };
+
+/**
+ * Generic Upload Utility: Uploads a single file to a bucket.
+ */
+export const uploadImage = async (file, bucket = 'listings') => {
+  if (!file) return null;
+  const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}_${file.name}`;
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .upload(fileName, file);
+    
+  if (error) {
+    console.error('Upload Error:', error);
+    throw error;
+  }
+  
+  const { data: publicData } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(data.path);
+    
+  return publicData.publicUrl;
+};

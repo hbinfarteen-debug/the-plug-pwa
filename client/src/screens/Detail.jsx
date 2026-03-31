@@ -102,7 +102,13 @@ export default function Detail({ showToast }) {
             <span>{listing.type === 'item' ? 'current bid' : 'gig'}</span>
           </div>
           <div className="seller-row" onClick={() => navigate(`/profile/${listing?.posterId}`)}>
-            <div className="sav" style={{background:'var(--surface2)', display:'grid', placeItems:'center', borderRadius:'8px', width:'40px', height:'40px'}}>{listing?.fullname?.charAt(0) || '👤'}</div>
+            <div className="sav" style={{background:'var(--surface2)', position:'relative', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', borderRadius:'8px', width:'40px', height:'40px'}}>
+               {listing?.avatarUrl || listing?.avatarurl ? (
+                 <img src={listing.avatarUrl || listing.avatarurl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="avatar" />
+               ) : (
+                 listing?.fullname?.charAt(0) || '👤'
+               )}
+            </div>
             <div style={{flex:1}}><div style={{fontSize:'14px',fontWeight:600}}>{listing?.fullname || 'Plug Seller'}</div><div style={{fontSize:'12px',color:'var(--text-muted)'}}>📍 {listing?.suburb} · <span style={{color:'var(--green)',fontWeight:700}}>{listing?.ubuntupoints || 0} pts</span></div></div>
             <div>›</div>
           </div>

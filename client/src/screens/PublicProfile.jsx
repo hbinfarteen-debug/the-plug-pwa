@@ -40,7 +40,13 @@ export default function PublicProfile({ showToast }) {
       
       <div className="scroll-area">
         <div className="profile-header">
-          <div className="avatar">👨🏾</div>
+          <div className="avatar" style={{position:'relative', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center'}}>
+            {user?.avatarUrl || user?.avatarurl ? (
+               <img src={user.avatarUrl || user.avatarurl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="avatar" />
+            ) : (
+                '👨🏾'
+            )}
+          </div>
           <h2 className="profile-name">{user.fullName || user.fullname || 'Plug Seller'}</h2>
           <div className="profile-suburb">📍 {user.homeBase || user.homebase || '...'} · <span style={{color:'var(--green)', fontWeight:700}}>{user.ubuntuPoints || user.ubuntupoints || 0} pts</span></div>
           <div style={{marginTop:'10px'}}>

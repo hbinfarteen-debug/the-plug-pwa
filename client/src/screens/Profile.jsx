@@ -34,8 +34,12 @@ export default function Profile({ showToast }) {
           </div>
         )}
         <div className="profile-header">
-          <div className="avatar" style={{position:'relative'}}>
-            😊
+          <div className="avatar" style={{position:'relative', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center'}}>
+            {user?.avatarUrl || user?.avatarurl ? (
+              <img src={user.avatarUrl || user.avatarurl} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="avatar" />
+            ) : (
+              '😊'
+            )}
             {vacation && <div className="vmode-badge">💤</div>}
           </div>
           <div className="profile-name">{user?.fullname || 'Loading...'}</div>

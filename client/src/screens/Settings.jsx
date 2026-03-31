@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { uploadImage } from '../supabase';
+import { API_BASE_URL } from '../config';
 
 export default function Settings({ showToast }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem('plug_user') || '{}');
@@ -31,6 +34,42 @@ export default function Settings({ showToast }) {
         showToast('Processing deletion request... (24h)', 'error');
     }
   };
+  
+  const handleAvatarSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setUpdating(true);
+    showToast('Uploading avatar...', 'info');
+    
+    try {
+      // 1. Upload to Supabase
+      const url = await uploadImage(file);
+      
+      // 2. Update Database via Backend
+      const res = await fetch(`/api/users/${user.id}/avatar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl: url })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        // 3. Update Local Storage and State
+        const updatedUser = { ...user, avatarUrl: url, avatarurl: url };
+        localStorage.setItem('plug_user', JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        showToast('Avatar updated! 👨🏾‍🎤', 'success');
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Upload failed', 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   return (
     <div className="screen active">
@@ -43,9 +82,16 @@ export default function Settings({ showToast }) {
       <div className="scroll-area">
         <div className="section-header"><div className="section-title">👤 PROFILE SETTINGS</div></div>
         
-        <div className="settings-item" onClick={() => showToast('Gallery opened...', '')}>
+        <div className="settings-item" onClick={() => !updating && document.getElementById('avatar-input').click()}>
           <div className="settings-label">Change Profile Picture</div>
-          <div className="settings-val">Update avatar</div>
+          <div className="settings-val">{updating ? 'Uploading...' : 'Update avatar'}</div>
+          <input 
+            type="file" 
+            id="avatar-input" 
+            style={{display:'none'}} 
+            accept="image/*" 
+            onChange={handleAvatarSelect}
+          />
         </div>
 
         <div className="settings-item">
