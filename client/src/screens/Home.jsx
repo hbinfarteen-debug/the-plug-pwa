@@ -4,29 +4,39 @@ import { API_BASE_URL } from '../config';
 
 export default function Home({ showToast }) {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    const localUser = JSON.parse(localStorage.getItem('plug_user'));
-    setUser(localUser);
+    try {
+      const stored = localStorage.getItem('plug_user');
+      if (!stored) {
+        navigate('/onboard');
+        return;
+      }
+      setUser(JSON.parse(stored));
+    } catch (e) {
+      console.error('Error reading user data', e);
+      navigate('/onboard');
+    }
 
     fetch(`${API_BASE_URL}/api/listings`)
       .then(res => res.json())
       .then(data => {
-        setListings(data);
+        setListings(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(err => {
         console.error(err);
         setLoading(false);
       });
-  }, []);
+  }, [navigate]);
 
-  // Filter by user's homebase
+  // Filter based on user's homebase and selected type
   const filteredListings = listings.filter(l => 
-    !user || l.suburb === user.homebase
+    (!user || !user.homebase || l.suburb === user.homebase)
   );
 
   const items = filteredListings.filter(l => l.type === 'item');

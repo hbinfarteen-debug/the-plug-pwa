@@ -7,6 +7,7 @@ export default function Detail({ showToast }) {
   const { id } = useParams();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [biting, setBiting] = useState(false);
   const [bidAmount, setBidAmount] = useState('');
 
   useEffect(() => {
@@ -35,7 +36,6 @@ export default function Detail({ showToast }) {
       if (res.ok) {
         showToast("Bid placed! You're winning 🎉", 'success');
         setBidAmount('');
-        // Refresh listing
         const updated = await fetch(`${API_BASE_URL}/api/listings/${id}`).then(r => r.json());
         setListing(updated);
       }
@@ -44,14 +44,40 @@ export default function Detail({ showToast }) {
     }
   };
 
+  const startChat = async () => {
+    const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
+    if (!user.id) return navigate('/onboard');
+    if (user.id === listing.posterId) return showToast("This is your listing!", 'info');
+
+    setBiting(true);
+    try {
+      const res = await fetch('/api/chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingId: listing.id,
+          buyerId: user.id,
+          sellerId: listing.posterId
+        })
+      });
+      const data = await res.json();
+      if (data.id) {
+        navigate(`/chat/${data.id}`);
+      }
+    } catch (err) {
+      showToast('Error starting chat', 'error');
+    }
+    setBiting(false);
+  };
+
   if (loading) return <div className="screen active"><div style={{padding:'20px',textAlign:'center'}}>Loading detail...</div></div>;
   if (!listing) return <div className="screen active"><div style={{padding:'20px',textAlign:'center'}}>Listing not found.</div></div>;
 
   return (
     <div className="screen active">
       <div className="detail-img" style={{padding:0, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center'}}>
-        {listing.imageUrls && JSON.parse(listing.imageUrls).length > 0 ? (
-          <img src={JSON.parse(listing.imageUrls)[0]} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="listing" />
+        {listing.imageUrls && (typeof listing.imageUrls === 'string' ? JSON.parse(listing.imageUrls) : listing.imageUrls).length > 0 ? (
+          <img src={typeof listing.imageUrls === 'string' ? JSON.parse(listing.imageUrls)[0] : listing.imageUrls[0]} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="listing" />
         ) : (
           listing.type === 'item' ? '🎮' : '🌿'
         )}
@@ -67,14 +93,14 @@ export default function Detail({ showToast }) {
             <span>{listing.type === 'item' ? 'current bid' : 'gig'}</span>
           </div>
           <div className="seller-row" onClick={() => navigate(`/profile/${listing.posterId}`)}>
-            <div className="sav">👨🏾</div>
-            <div style={{flex:1}}><div style={{fontSize:'14px',fontWeight:600}}>{listing.fullName}</div><div style={{fontSize:'12px',color:'var(--text-muted)'}}>📍 {listing.suburb} · <span style={{color:'var(--green)',fontWeight:700}}>{listing.ubuntuPoints} pts</span></div></div>
+            <div className="sav" style={{background:'var(--surface2)', display:'grid', placeItems:'center', borderRadius:'8px', width:'40px', height:'40px'}}>{listing.fullname?.charAt(0) || '👤'}</div>
+            <div style={{flex:1}}><div style={{fontSize:'14px',fontWeight:600}}>{listing.fullname}</div><div style={{fontSize:'12px',color:'var(--text-muted)'}}>📍 {listing.suburb} · <span style={{color:'var(--green)',fontWeight:700}}>{listing.ubuntupoints} pts</span></div></div>
             <div>›</div>
           </div>
           <p style={{fontSize:'14px',color:'var(--text-muted)',lineHeight:1.7,marginBottom:'16px'}}>{listing.description}</p>
           
           <div className="bid-section">
-            <h4>Place Your Bid</h4>
+            <h4>{listing.type === 'item' ? 'Place Your Bid' : 'Apply for Gig'}</h4>
             <div style={{display:'flex',gap:'10px'}}>
               <div style={{flex:1,display:'flex',alignItems:'center',background:'var(--surface2)',border:'1.5px solid var(--border)',borderRadius:'var(--radius-sm)',padding:'11px 14px'}}>
                 <span style={{fontSize:'15px',color:'var(--text-muted)',marginRight:'7px'}}>$</span>
@@ -90,12 +116,16 @@ export default function Detail({ showToast }) {
             </div>
           </div>
 
+          <button className="btn-primary" style={{width:'100%', marginTop:'15px', background:'var(--surface2)', color:'var(--text)', border:'1px solid var(--border)'}} onClick={startChat} disabled={biting}>
+            {biting ? 'Starting...' : '💬 Message Plug'}
+          </button>
+
           <div style={{marginTop:'20px'}}>
             <h4>Recent Bids</h4>
             {listing.bids?.length > 0 ? (
               listing.bids.map(b => (
                 <div key={b.id} style={{padding:'10px 0', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between'}}>
-                  <span>{b.fullName} ({b.ubuntuPoints} pts)</span>
+                  <span>{b.fullname} ({b.ubuntupoints} pts)</span>
                   <span style={{color:'var(--green)', fontWeight:700}}>${b.amount.toFixed(2)}</span>
                 </div>
               ))

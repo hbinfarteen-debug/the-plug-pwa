@@ -1,34 +1,81 @@
-import React, { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 export default function Chat() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [msg, setMsg] = useState('');
-  const [history, setHistory] = useState([
-    { from: 'them', text: 'Hey! Is the PS3 still available?', time: '10:30 AM' },
-    { from: 'me', text: 'Yes it is! I can meet in Burnside today.', time: '10:32 AM' },
-    { from: 'them', text: 'Perfect. What time?', time: '10:33 AM' },
-  ]);
+  const [history, setHistory] = useState([]);
+  const [chatInfo, setChatInfo] = useState(null);
+  const scrollRef = useRef();
 
-  const send = () => {
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
+    if (!user.id) return navigate('/onboard');
+
+    // Fetch messages
+    const fetchMsgs = () => {
+      fetch(`/api/messages/${id}`)
+        .then(res => res.json())
+        .then(data => setHistory(data))
+        .catch(err => console.error(err));
+    };
+
+    fetchMsgs();
+    const interval = setInterval(fetchMsgs, 3000); // Polling for now
+
+    return () => clearInterval(interval);
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [history]);
+
+  const send = async () => {
     if (!msg.trim()) return;
-    setHistory([...history, { from: 'me', text: msg, time: '3:37 PM' }]);
-    setMsg('');
+    const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
+    
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatId: id,
+          senderId: user.id,
+          text: msg
+        })
+      });
+      if (res.ok) {
+        const newMsg = await res.json();
+        setHistory([...history, newMsg]);
+        setMsg('');
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
+  const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
+
   return (
-    <div className="screen active" style={{background:'var(--bg)'}}>
+    <div className="screen active" style={{background:'var(--bg)', display:'flex', flexDirection:'column'}}>
       <div className="topbar">
         <div style={{cursor:'pointer',fontSize:'20px'}} onClick={()=>navigate(-1)}>‹</div>
         <div style={{flex:1, marginLeft:'15px'}}>
-          <div style={{fontSize:'15px', fontWeight:700}}>Chukwudi M.</div>
-          <div style={{fontSize:'11px', color:'var(--green)'}}>● Online</div>
+          <div style={{fontSize:'15px', fontWeight:700}}>Chat Room</div>
+          <div style={{fontSize:'11px', color:'var(--green)'}}>● Active</div>
         </div>
         <div className="icon-btn">📞</div>
       </div>
 
-      <div className="scroll-area" style={{padding:'20px', display:'flex', flexDirection:'column', gap:'12px', background:'var(--bg)'}}>
+      <div className="scroll-area" ref={scrollRef} style={{padding:'20px', display:'flex', flexDirection:'column', gap:'12px', background:'var(--bg)', flex:1}}>
+        {history.length === 0 && (
+          <div style={{textAlign:'center', color:'var(--text-muted)', fontSize:'13px', marginTop:'20px'}}>
+            No messages yet. Send one to start the deal!
+          </div>
+        )}
         {history.map((m, i) => (
           <div key={i} style={{
             maxWidth:'80%',
@@ -36,15 +83,17 @@ export default function Chat() {
             borderRadius:'18px',
             fontSize:'14px',
             lineHeight:1.5,
-            alignSelf: m.from === 'me' ? 'flex-end' : 'flex-start',
-            background: m.from === 'me' ? 'var(--green)' : 'var(--surface2)',
-            color: m.from === 'me' ? '#000' : 'var(--text)',
-            border: m.from === 'me' ? 'none' : '1px solid var(--border)',
-            borderBottomRightRadius: m.from === 'me' ? '4px' : '18px',
-            borderBottomLeftRadius: m.from === 'them' ? '4px' : '18px',
+            alignSelf: m.senderId === user.id ? 'flex-end' : 'flex-start',
+            background: m.senderId === user.id ? 'var(--green)' : 'var(--surface2)',
+            color: m.senderId === user.id ? '#000' : 'var(--text)',
+            border: m.senderId === user.id ? 'none' : '1px solid var(--border)',
+            borderBottomRightRadius: m.senderId === user.id ? '4px' : '18px',
+            borderBottomLeftRadius: m.senderId !== user.id ? '4px' : '18px',
           }}>
             {m.text}
-            <div style={{fontSize:'10px', marginTop:'4px', opacity:0.6, textAlign:'right'}}>{m.time}</div>
+            <div style={{fontSize:'10px', marginTop:'4px', opacity:0.6, textAlign:'right'}}>
+              {new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            </div>
           </div>
         ))}
       </div>

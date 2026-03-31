@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { neighborhoods } from '../data/neighborhoods';
 import { supabase } from '../supabase';
@@ -10,8 +10,10 @@ export default function Onboard({ showToast }) {
   const [suburb, setSuburb] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [ageOk, setAgeOk] = useState(true);
+  const [isLogin, setIsLogin] = useState(false);
 
   const [fullName, setFullName] = useState('');
+  const [password, setPassword] = useState('');
   const [nameError, setNameError] = useState('');
   const [checkingName, setCheckingName] = useState(false);
 
@@ -21,27 +23,43 @@ export default function Onboard({ showToast }) {
 
   const nxt = (n) => setSlide(n);
 
-  const checkNameAvailability = async () => {
-    if (!fullName || fullName.length < 3) return setNameError('Name too short (min 3 chars)');
+  const handleAuth = async () => {
+    if (!fullName || fullName.length < 3) return setNameError('Name too short');
+    if (!password || password.length < 4) return setNameError('Password too short (min 4)');
+    
     setCheckingName(true);
     setNameError('');
+    
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id')
-        .ilike('fullname', fullName)
-        .limit(1);
+      if (isLogin) {
+        // Login via Backend
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: fullName, password }) // Using fullName as phone/name for now as per user pattern
+        });
+        const data = await res.json();
 
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        setNameError('This Plug name is already taken! 🛑');
+        if (!res.ok) {
+          setNameError(data.error || 'Login failed');
+        } else {
+          showToast(`Welcome back, ${data.fullname}!`, 'success');
+          localStorage.setItem('plug_user', JSON.stringify(data));
+          navigate('/home');
+        }
       } else {
-        setNameError('');
-        nxt(3);
+        // Check availability via Backend
+        const res = await fetch(`/api/auth/check-name/${encodeURIComponent(fullName)}`);
+        const { available } = await res.json();
+
+        if (!available) {
+          setNameError('This Plug name is already taken! 🛑');
+        } else {
+          nxt(3); // Go to suburb selection
+        }
       }
     } catch (e) {
-      setNameError(`Error: ${e.message || 'Could not check name'}`);
+      setNameError(`Error connecting to The Plug Server`);
     }
     setCheckingName(false);
   };
@@ -50,21 +68,22 @@ export default function Onboard({ showToast }) {
     showToast(`Welcome to THE PLUG, ${fullName}! 🎉`,'success');
     
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .insert({
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           fullname: fullName,
+          password: password,
           phone: '263' + Math.floor(Math.random()*100000000),
           dob: '1990-01-01',
           deviceid: 'dev_' + Math.random().toString(36).substr(2, 9),
-          homebase: suburb || 'Makokoba',
-          ubuntupoints: 100,
-          role: 'user'
+          homebase: suburb || 'Makokoba'
         })
-        .select()
-        .single();
+      });
+      const data = await res.json();
 
-      if (error) throw error;
+      if (!res.ok) throw new Error(data.error || 'Registration failed');
+      
       localStorage.setItem('plug_user', JSON.stringify(data));
       setTimeout(()=>navigate('/home'), 1500);
     } catch (e) {
@@ -94,34 +113,56 @@ export default function Onboard({ showToast }) {
                 <div className="flag">🇿🇼</div><div className="lname">ChiShona</div>
               </div>
             </div>
-            <button className="btn-primary" onClick={()=>nxt(2)} style={{alignSelf:'flex-start'}}>Continue ›</button>
+            
+            <div style={{marginTop:'auto', paddingBottom:'20px'}}>
+               <button className="btn-primary" onClick={()=>{ setIsLogin(false); nxt(2); }} style={{width:'100%', marginBottom:'10px'}}>New Plug (Sign Up) ›</button>
+               <button className="btn-secondary" onClick={()=>{ setIsLogin(true); nxt(2); }} style={{width:'100%'}}>Regular Plug (Login) ›</button>
+            </div>
           </div>
         )}
 
         {slide === 2 && (
           <div className="slide active">
             <div className="slide-num">Step 2 of 6</div>
-            <div className="slide-emoji">🏷️</div>
-            <h2>What’s your <em>Plug Name</em>?</h2>
-            <p style={{marginBottom:'14px'}}>Pick a unique name. Respectable names help build Ubuntu trust faster! ✨</p>
-            <input 
-              className="field-input" 
-              placeholder="e.g. Brave_Plug_Bulawayo" 
-              value={fullName}
-              onChange={(e) => {
-                setFullName(e.target.value);
-                setNameError('');
-              }}
-            />
+            <div className="slide-emoji">{isLogin ? '🔑' : '🏷️'}</div>
+            <h2>{isLogin ? 'Plug Login' : 'Pick your Plug Name'}</h2>
+            <p style={{marginBottom:'14px'}}>{isLogin ? 'Enter your details to enter the marketplace.' : 'Pick a unique name. Respectable names help build Ubuntu trust faster!'}</p>
+            
+            <div className="form-group" style={{marginBottom:'15px'}}>
+              <label style={{fontSize:'12px', color:'var(--text-muted)'}}>Plug Name</label>
+              <input 
+                className="field-input" 
+                placeholder="e.g. Brave_Plug_Bulawayo" 
+                value={fullName}
+                onChange={(e) => {
+                  setFullName(e.target.value);
+                  setNameError('');
+                }}
+              />
+            </div>
+
+            <div className="form-group" style={{marginBottom:'15px'}}>
+              <label style={{fontSize:'12px', color:'var(--text-muted)'}}>Password</label>
+              <input 
+                type="password"
+                className="field-input" 
+                placeholder="••••••••" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
             {nameError && <p style={{color:'var(--red)', fontSize:'12px', marginTop:'8px'}}>{nameError}</p>}
+            
             <button 
               className="btn-primary" 
-              onClick={checkNameAvailability}
+              onClick={handleAuth}
               disabled={checkingName}
-              style={{alignSelf:'flex-start',marginTop:'20px'}}
+              style={{alignSelf:'flex-start',marginTop:'10px'}}
             >
-              {checkingName ? 'Checking...' : 'Check Availability ›'}
+              {checkingName ? 'Processing...' : (isLogin ? 'Enter The Plug' : 'Check Availability')}
             </button>
+            <p onClick={()=>setSlide(1)} style={{fontSize:'12px', color:'var(--accent)', marginTop:'15px', cursor:'pointer'}}>‹ Back</p>
           </div>
         )}
 
