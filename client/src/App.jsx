@@ -15,7 +15,8 @@ import Dispute from './screens/Dispute';
 import Settings from './screens/Settings';
 import SuccessOverlay from './components/SuccessOverlay';
 import PostModal from './components/PostModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { translations } from './utils/translations';
 
 function BottomNav() {
   const nav = useNavigate();
@@ -58,29 +59,37 @@ function App() {
   const [successData, setSuccessData] = useState(null);
 
   const [toast, setToast] = useState({ show: false, msg: '', type: '' });
+  const [language, setLanguage] = useState(localStorage.getItem('plug_lang') || 'English');
+  
   const showToast = (msg, type = '') => {
     setToast({ show: true, msg, type });
     setTimeout(() => setToast({ show: false, msg: '', type: '' }), 2600);
   };
 
+  const t = translations[language] || translations.English;
+
+  useEffect(() => {
+    localStorage.setItem('plug_lang', language);
+  }, [language]);
+
   return (
     <Router>
       <div className="app-shell">
         <Routes>
-          <Route path="/" element={<Splash />} />
-          <Route path="/onboard" element={<Onboard showToast={showToast} />} />
-          <Route path="/home" element={<Home showToast={showToast} />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/post" element={<PostListing showToast={showToast} />} />
-          <Route path="/profile/:id" element={<PublicProfile showToast={showToast} />} />
-          <Route path="/myplugs" element={<MyPlugs showToast={showToast} onSuccess={() => setSuccessData({})} />} />
-          <Route path="/profile" element={<Profile showToast={showToast} />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/chat/:id" element={<Chat />} />
-          <Route path="/detail/:id" element={<Detail showToast={showToast} />} />
-          <Route path="/admin" element={<Admin showToast={showToast} />} />
-          <Route path="/dispute" element={<Dispute showToast={showToast} />} />
-          <Route path="/settings" element={<Settings showToast={showToast} />} />
+          <Route path="/" element={<Splash t={t} />} />
+          <Route path="/onboard" element={<Onboard showToast={showToast} t={t} language={language} setLanguage={setLanguage} />} />
+          <Route path="/home" element={<Home showToast={showToast} t={t} />} />
+          <Route path="/search" element={<Search t={t} />} />
+          <Route path="/post" element={<PostListing showToast={showToast} t={t} />} />
+          <Route path="/profile/:id" element={<PublicProfile showToast={showToast} t={t} />} />
+          <Route path="/myplugs" element={<MyPlugs showToast={showToast} t={t} onSuccess={() => setSuccessData({})} />} />
+          <Route path="/profile" element={<Profile showToast={showToast} t={t} />} />
+          <Route path="/messages" element={<Messages t={t} />} />
+          <Route path="/chat/:id" element={<Chat t={t} />} />
+          <Route path="/detail/:id" element={<Detail showToast={showToast} t={t} />} />
+          <Route path="/admin" element={<Admin showToast={showToast} t={t} />} />
+          <Route path="/dispute" element={<Dispute showToast={showToast} t={t} />} />
+          <Route path="/settings" element={<Settings showToast={showToast} t={t} setLanguage={setLanguage} language={language} />} />
         </Routes>
         
         <BottomNav />

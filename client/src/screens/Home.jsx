@@ -3,7 +3,7 @@ import logo from '../assets/logo.png';
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 
-export default function Home({ showToast }) {
+export default function Home({ showToast, t }) {
   const navigate = useNavigate();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -135,15 +135,15 @@ export default function Home({ showToast }) {
       </div>
       <div className="scroll-area">
         <div className="feed-toggle">
-          <div className={`feed-tab ${filter==='all'?'active':''}`} onClick={()=>setFilter('all')}>All</div>
-          <div className={`feed-tab ${filter==='item'?'active':''}`} onClick={()=>setFilter('item')}>Items</div>
-          <div className={`feed-tab ${filter==='gig'?'active':''}`} onClick={()=>setFilter('gig')}>Gigs</div>
+          <div className={`feed-tab ${filter==='all'?'active':''}`} onClick={()=>setFilter('all')}>{t.all}</div>
+          <div className={`feed-tab ${filter==='item'?'active':''}`} onClick={()=>setFilter('item')}>{t.items}</div>
+          <div className={`feed-tab ${filter==='gig'?'active':''}`} onClick={()=>setFilter('gig')}>{t.gigs}</div>
         </div>
 
         <div style={{padding:'10px 20px', backgroundColor:'var(--surface)', borderBottom:'1px solid var(--border)', fontSize:'12px', color:'var(--text-muted)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
            <div>
-             📍 Showing Plugs in <strong>{unlockedList.join(', ') || 'your area'}</strong> 
-             {user?.ubuntupoints < 150 && unlockedList.length === 1 && <span style={{marginLeft:'5px'}}>(Get 150 pts to unlock more)</span>}
+             📍 {t.showingPlugs.replace('{suburbs}', (unlockedList.join(', ') || 'your area'))}
+             {user?.ubuntupoints < 150 && unlockedList.length === 1 && <span style={{marginLeft:'5px'}}>{t.get150Pts}</span>}
            </div>
            {hasUnusedUnlocks && (
              <button 
@@ -151,7 +151,7 @@ export default function Home({ showToast }) {
                style={{background:'var(--amber)', color:'#000', border:'none', fontSize:'10px', fontWeight:700}}
                onClick={() => setShowUnlockModal(true)}
              >
-               🚀 UNLOCK NEW AREA
+               {t.unlockNew}
              </button>
            )}
         </div>
@@ -184,8 +184,8 @@ export default function Home({ showToast }) {
             {(filter === 'all') && (
               <>
                 <div className="section-header">
-                  <div className="section-title">⚡ Ending Soon</div>
-                  <div className="see-all">See all</div>
+                  <div className="section-title">⚡ {t.endingSoon}</div>
+                  <div className="see-all">{t.seeAll}</div>
                 </div>
                 <div className="urgency-rail">
                   {filteredListings.slice(0, 4).map(l => {
@@ -193,7 +193,7 @@ export default function Home({ showToast }) {
                     return (
                     <div key={l.id} className="urgency-card" style={boosted ? {borderColor:'var(--green)', boxShadow:'0 0 12px rgba(0,232,122,0.15)'} : {}} onClick={()=>navigate(`/detail/${l.id}`)}>
                       <div className="urgency-img" style={{padding:0, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', position:'relative'}}>
-                        {boosted && <div style={{position:'absolute', top:4, left:4, background:'var(--green)', color:'#fff', padding:'2px 6px', fontSize:'10px', borderRadius:'10px', fontWeight:'bold', zIndex:10}}>🚀 BOOSTED</div>}
+                        {boosted && <div style={{position:'absolute', top:4, left:4, background:'var(--green)', color:'#fff', padding:'2px 6px', fontSize:'10px', borderRadius:'10px', fontWeight:'bold', zIndex:10}}>🚀 {t.boosted}</div>}
                         {l.imageUrls && l.imageUrls !== '[]' ? (
                           <img 
                             src={(() => {
@@ -243,12 +243,12 @@ export default function Home({ showToast }) {
                     </div>
                     <div className="listing-body">
                       <h4>{l.title}</h4>
-                      <div className="listing-meta"><span className="listing-price">${(l.price || 0).toFixed(2)}</span><span className="listing-time">22h left</span></div>
+                      <div className="listing-meta"><span className="listing-price">${(l.price || 0).toFixed(2)}</span><span className="listing-time">22h {t.left}</span></div>
                       <div className="listing-suburb">📍 {l.suburb}</div>
-                      <div className="ubuntu-chip"><div className="dot dot-g"></div> {l.ubuntupoints} pts · {l.fullname}</div>
+                      <div className="ubuntu-chip"><div className="dot dot-g"></div> {l.ubuntupoints} {t.pts} · {l.fullname}</div>
                     </div>
                   </div>
-                )}) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>No items listed in {user?.homebase} yet.</p>}
+                )}) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>{t.noListings.replace('{suburb}', (user?.homebase || ''))}</p>}
               </>
             )}
 
@@ -264,12 +264,12 @@ export default function Home({ showToast }) {
                       <div className="gig-info"><h4>{l.title} {boosted && <span style={{fontSize:'12px',color:'var(--green)'}}>BOOSTED</span>}</h4><p>{l.description}</p></div>
                     </div>
                     <div className="gig-meta">
-                      <span className="gig-stat">💰 <strong>{l.bidCount || 0} bids</strong></span>
+                      <span className="gig-stat">💰 <strong>{l.bidCount || 0} {t.bids}</strong></span>
                       <span className="gig-stat">📍 <strong>{l.suburb}</strong></span>
                     </div>
                     {l.is16PlusFriendly && <div style={{marginTop:'9px'}}><span className="youth-tag">✅ 16+ Friendly</span></div>}
                   </div>
-                )}) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>No gigs available in {user?.homebase}.</p>}
+                )}) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>{t.noListings.replace('{suburb}', (user?.homebase || ''))}</p>}
               </>
             )}
           </>

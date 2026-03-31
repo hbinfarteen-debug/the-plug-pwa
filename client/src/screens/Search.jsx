@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function Search() {
+export default function Search({ t }) {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState('All');
   const [user, setUser] = useState(null);
@@ -11,21 +11,21 @@ export default function Search() {
     setUser(localUser);
   }, []);
 
-  const filters = ['All', 'Items', 'Gigs', '16+ Friendly', 'Ending Soon'];
+  const filters = [t.all, t.items, t.gigs, t.friendly, t.ending];
 
   const pointsToUnlock = 150 - (user?.ubuntupoints || 100);
 
   return (
     <div className="screen active">
       <div className="topbar">
-        <div className="logo">THE<span> PLUG</span></div>
+        <div className="logo">{t.search} <strong>Bulawayo</strong></div>
         <div className="icon-btn" onClick={() => navigate('/settings')}>⚙️</div>
       </div>
       <div className="scroll-area">
         <div className="search-bar-wrap">
           <div className="search-bar">
             <span>🔍</span>
-            <input placeholder="What are you looking for? / Ufuna chii?" />
+            <input placeholder={t.placeholder} />
           </div>
         </div>
         <div className="filter-row">

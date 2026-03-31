@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { neighborhoods } from '../data/neighborhoods';
 import { supabase } from '../supabase';
 
-export default function Onboard({ showToast }) {
+export default function Onboard({ showToast, t, language, setLanguage }) {
   const navigate = useNavigate();
   const [slide, setSlide] = useState(1);
-  const [lang, setLang] = useState('English');
   const [suburb, setSuburb] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [ageOk, setAgeOk] = useState(true);
@@ -71,7 +70,7 @@ export default function Onboard({ showToast }) {
   };
 
   const completeOnboarding = async () => {
-    showToast(`Welcome to THE PLUG, ${fullName}! 🎉`,'success');
+    showToast(t.welcome.replace('{name}', fullName), 'success');
     
     try {
       const res = await fetch('/api/auth/register', {
@@ -104,35 +103,36 @@ export default function Onboard({ showToast }) {
         
         {slide === 1 && (
           <div className="slide active">
-            <div className="slide-num">Step 1 of 6</div>
+            <div className="slide-num">{t.chooseLang}</div>
             <div className="slide-emoji">🌍</div>
-            <h2>Choose your <em>language</em></h2>
-            <p>THE PLUG speaks your language. Pick the one you're most comfortable with.</p>
-            <div className="lang-grid">
-              <div className={`lang-card ${lang==='English'?'selected':''}`} onClick={()=>setLang('English')}>
-                <div className="flag">🇿🇼</div><div className="lname">English</div>
+            <h2>{t.chooseLang}</h2>
+            <p style={{marginBottom:'24px'}}>{language === 'English' ? 'Select your primary language for the marketplace.' : 'Khetha ulimi oluthandayo.'}</p>
+            
+            <div className="lang-list">
+              <div className={`lang-card ${language==='English'?'selected':''}`} onClick={()=>setLanguage('English')}>
+                <div className="flag">🇺🇸</div><div className="lname">English</div>
               </div>
-              <div className={`lang-card ${lang==='IsiNdebele'?'selected':''}`} onClick={()=>setLang('IsiNdebele')}>
+              <div className={`lang-card ${language==='IsiNdebele'?'selected':''}`} onClick={()=>setLanguage('IsiNdebele')}>
                 <div className="flag">🇿🇼</div><div className="lname">IsiNdebele</div>
               </div>
-              <div className={`lang-card ${lang==='ChiShona'?'selected':''}`} onClick={()=>setLang('ChiShona')}>
+              <div className={`lang-card ${language==='ChiShona'?'selected':''}`} onClick={()=>setLanguage('ChiShona')}>
                 <div className="flag">🇿🇼</div><div className="lname">ChiShona</div>
               </div>
             </div>
             
             <div style={{marginTop:'auto', paddingBottom:'20px'}}>
-               <button className="btn-primary" onClick={()=>{ setIsLogin(false); nxt(2); }} style={{width:'100%', marginBottom:'10px'}}>New Plug (Sign Up) ›</button>
-               <button className="btn-secondary" onClick={()=>{ setIsLogin(true); nxt(2); }} style={{width:'100%'}}>Regular Plug (Login) ›</button>
+               <button className="btn-primary" onClick={()=>{ setIsLogin(false); nxt(2); }} style={{width:'100%', marginBottom:'10px'}}>{t.signUp}</button>
+               <button className="btn-primary" onClick={()=>{ setIsLogin(true); nxt(2); }} style={{width:'100%'}}>{t.login}</button>
             </div>
           </div>
         )}
 
         {slide === 2 && (
           <div className="slide active">
-            <div className="slide-num">Step 2 of 6</div>
+            <div className="slide-num">{t.back}</div>
             <div className="slide-emoji">{isLogin ? '🔑' : '🏷️'}</div>
-            <h2>{isLogin ? 'Plug Login' : 'Pick your Plug Name'}</h2>
-            <p style={{marginBottom:'14px'}}>{isLogin ? 'Enter your details to enter the marketplace.' : 'Pick a unique name. Respectable names help build Ubuntu trust faster!'}</p>
+            <h2>{isLogin ? (t.login.includes('›') ? t.login.slice(0, -2) : t.login) : t.pickName}</h2>
+            <p style={{marginBottom:'14px'}}>{isLogin ? t.phoneVerSub : t.pickNameSub}</p>
             
             <div className="form-group" style={{marginBottom:'15px'}}>
               <label style={{fontSize:'12px', color:'var(--text-muted)'}}>{isLogin ? 'Phone or Plug Name' : 'Plug Name'}</label>
@@ -176,20 +176,44 @@ export default function Onboard({ showToast }) {
               className="btn-primary" 
               onClick={handleAuth}
               disabled={checkingName}
-              style={{alignSelf:'flex-start',marginTop:'10px'}}
+              style={{width:'100%', marginTop:'10px'}}
             >
               {checkingName ? 'Processing...' : (isLogin ? 'Enter The Plug' : 'Check Availability')}
             </button>
-            <p onClick={()=>setSlide(1)} style={{fontSize:'12px', color:'var(--accent)', marginTop:'15px', cursor:'pointer'}}>‹ Back</p>
+            <p onClick={()=>setSlide(1)} style={{fontSize:'12px', color:'var(--accent)', marginTop:'15px', cursor:'pointer', textAlign:'center'}}>‹ Back</p>
           </div>
         )}
 
         {slide === 3 && (
           <div className="slide active">
-            <div className="slide-num">Step 3 of 6</div>
+            <div className="slide-num">{t.back}</div>
+            <div className="slide-emoji">📱</div>
+            <h2>{t.phoneVerHeader}</h2>
+            <p style={{marginBottom:'24px'}}>{t.phoneVerSub}</p>
+            
+            <div className="form-group">
+              <label>Phone Number</label>
+              <input 
+                className="field-input" 
+                placeholder="+263 7..." 
+                value={phone}
+                onChange={(e)=>setPhone(e.target.value)}
+              />
+            </div>
+
+            <div style={{marginTop:'auto', paddingBottom:'20px'}}>
+               <button className="btn-primary" onClick={()=>nxt(4)} style={{width:'100%'}}>{t.confirm} ›</button>
+               <button className="btn-ghost" onClick={()=>nxt(2)} style={{width:'100%', marginTop:'10px'}}>{t.back}</button>
+            </div>
+          </div>
+        )}
+
+        {slide === 4 && (
+          <div className="slide active">
+            <div className="slide-num">{t.back}</div>
             <div className="slide-emoji">📍</div>
-            <h2>Your <em>Home Base</em></h2>
-            <p style={{marginBottom:'14px'}}>Your neighborhood is your starting territory. Earn points to unlock more.</p>
+            <h2>{t.homebaseHeader}</h2>
+            <p style={{marginBottom:'18px'}}>{t.homebaseSub}</p>
             <input 
               className="suburb-search" 
               placeholder="Search Bulawayo suburbs..." 
@@ -206,14 +230,14 @@ export default function Onboard({ showToast }) {
             </div>
             <button className="btn-primary" onClick={()=>{
               if(!suburb) return showToast('Please select a neighborhood!', 'error');
-              nxt(4);
+              nxt(5);
             }} style={{alignSelf:'flex-start',marginTop:'14px'}}>Confirm ›</button>
           </div>
         )}
 
-        {slide === 4 && (
+        {slide === 5 && (
           <div className="slide active">
-            <div className="slide-num">Step 4 of 6</div>
+            <div className="slide-num">Step 5 of 6</div>
             <div className="slide-emoji">🛡️</div>
             <h2>Safety <em>Check</em></h2>
             <p style={{marginBottom:'14px'}}>Your age determines which jobs you can access. Must be 16+.</p>
@@ -223,13 +247,13 @@ export default function Onboard({ showToast }) {
               setAgeOk(a>=18);
             }} />
             {!ageOk && <div className="age-warn" style={{display:'block'}}>⚠️ You're under 18. Only "16+ Friendly" gigs will show in your feed.</div>}
-            <button className="btn-primary" onClick={()=>nxt(5)} style={{alignSelf:'flex-start',marginTop:'14px'}}>Continue ›</button>
+            <button className="btn-primary" onClick={()=>nxt(6)} style={{alignSelf:'flex-start',marginTop:'14px'}}>Continue ›</button>
           </div>
         )}
 
-        {slide === 5 && (
+        {slide === 6 && (
           <div className="slide active">
-            <div className="slide-num">Step 5 of 6</div>
+            <div className="slide-num">Step 6 of 6</div>
             <div className="slide-emoji">📜</div>
             <h2>The <em>Plug Code</em></h2>
             <div className="plug-code-list" style={{display:'flex', flexDirection:'column', gap:'12px', marginBottom:'20px'}}>

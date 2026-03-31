@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 
-export default function MyPlugs({ showToast, onSuccess }) {
+export default function MyPlugs({ showToast, t, onSuccess }) {
   const navigate = useNavigate();
   const [tab, setTab] = useState('req');
   const [plugs, setPlugs] = useState({ requests: [], hustle: [] });
@@ -79,13 +79,13 @@ export default function MyPlugs({ showToast, onSuccess }) {
   return (
     <div className="screen active">
       <div className="topbar">
-        <div className="logo">MY PLUGS</div>
+        <div className="logo">{t.myPlugs}</div>
         <div className="icon-btn" onClick={() => showToast('All caught up!', 'success')}>📬</div>
       </div>
       <div className="scroll-area">
         <div className="plugs-tabs">
-          <div className={`plugs-tab ${tab==='req'?'active':''}`} onClick={()=>setTab('req')}>📥 My Requests</div>
-          <div className={`plugs-tab ${tab==='hus'?'active':''}`} onClick={()=>setTab('hus')}>💪 My Hustle</div>
+          <div className={`plugs-tab ${tab==='req'?'active':''}`} onClick={()=>setTab('req')}>📥 {t.myPlugs} </div>
+          <div className={`plugs-tab ${tab==='hus'?'active':''}`} onClick={()=>setTab('hus')}>💪 {t.stats} </div>
         </div>
 
         {tab === 'req' && (
@@ -125,13 +125,13 @@ export default function MyPlugs({ showToast, onSuccess }) {
                     <div className={`pstatus ${h.status === 'active' ? 's-active' : 's-pending'}`}>{h.status.toUpperCase()}</div>
                   </div>
                   <div className="plug-acts" style={{marginTop:'10px'}}>
-                     <button className="btn-sm s" onClick={()=>navigate(`/detail/${h.id}`)}>Manage</button>
+                     <button className="btn-sm s" onClick={()=>navigate(`/detail/${h.id}`)}>{t.manage}</button>
                      {!boosted && (
                        <button className="btn-sm p" style={{background:'rgba(255,184,0,0.15)', color:'var(--amber)', border:'1px solid rgba(255,184,0,0.3)'}} onClick={() => {
                          setBoostingPlug(h);
                          setShowBoostModal(true);
                        }}>
-                         🚀 Boost ($0.30)
+                         🚀 {t.boost}
                        </button>
                      )}
                   </div>

@@ -4,7 +4,7 @@ import { uploadImage } from '../supabase';
 import { API_BASE_URL } from '../config';
 import { getDeviceFingerprint, getDeviceInfo } from '../utils/deviceFingerprint';
 
-export default function Settings({ showToast }) {
+export default function Settings({ showToast, t, language, setLanguage }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [updating, setUpdating] = useState(false);
@@ -144,8 +144,8 @@ export default function Settings({ showToast }) {
   return (
     <div className="screen active">
       <div className="topbar">
-        <div style={{cursor:'pointer',fontSize:'20px'}} onClick={()=>navigate(-1)}>‹</div>
-        <div className="logo" style={{fontSize:'16px'}}>SETTINGS</div>
+        <div style={{cursor:'pointer',fontSize:'20px'}} onClick={()=>navigate('/home')}>‹</div>
+        <div className="logo">{t.settings}</div>
         <div></div>
       </div>
 
@@ -203,24 +203,36 @@ export default function Settings({ showToast }) {
           <div className="settings-val">Reset cache &amp; local storage</div>
         </div>
 
-        {/* Admin Tools — Only visible to you (+263715198745, +263775939688) */}
-        {(user?.phone === '263715198745' || user?.phone === '+263715198745' || 
-          user?.phone === '263775939688' || user?.phone === '+263775939688') && (
-          <>
-            <div className="section-header"><div className="section-title">🛡️ OWNER TOOLS</div></div>
-            <div className="settings-item" onClick={() => {
-              const pw = prompt('Enter Admin Password:');
-              if (pw === '259047changwaMAFIA!') {
-                navigate('/admin');
-              } else {
-                showToast('Wrong password!', 'error');
-              }
-            }}>
-              <div className="settings-label" style={{color:'var(--amber)', fontWeight:700}}>Commander View</div>
-              <div className="settings-val" style={{color:'var(--amber)'}}>Admin Dashboard →</div>
-            </div>
-          </>
-        )}
+        <div className="section-header"><div className="section-title">⚙️ {t.settings.toUpperCase()}</div></div>
+        
+        {/* Language Switcher */}
+        <div className="settings-item">
+          <div className="settings-label">{t.chooseLang}</div>
+          <div className="settings-val">
+            <select 
+              value={language} 
+              onChange={(e) => setLanguage(e.target.value)}
+              style={{background:'none', border:'none', color:'var(--accent)', fontSize:'14px', textAlign:'right'}}
+            >
+              <option value="English">English</option>
+              <option value="IsiNdebele">IsiNdebele</option>
+              <option value="ChiShona">ChiShona</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="section-header"><div className="section-title">🛡️ OWNER TOOLS</div></div>
+        <div className="settings-item" onClick={() => {
+          const pw = prompt('Enter Admin Password:');
+          if (pw === '259047changwaMAFIA!') {
+            navigate('/admin');
+          } else {
+            showToast('Wrong password!', 'error');
+          }
+        }}>
+          <div className="settings-label" style={{color:'var(--amber)', fontWeight:700}}>{t.commanderView}</div>
+          <div className="settings-val" style={{color:'var(--amber)'}}>{t.adminWarning.split('—')[0]} →</div>
+        </div>
 
         <div className="section-header"><div className="section-title">💡 HOW IT WORKS</div></div>
         <div className="how-section">
