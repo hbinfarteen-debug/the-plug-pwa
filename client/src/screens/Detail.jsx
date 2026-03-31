@@ -2,13 +2,27 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 
-export default function Detail({ showToast }) {
+export default function Detail({ showToast, t }) {
   const navigate = useNavigate();
   const { id } = useParams();
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [biting, setBiting] = useState(false);
   const [bidAmount, setBidAmount] = useState('');
+
+  const getTimeRemaining = (createdAt, durationHours) => {
+    try {
+      const created = new Date(createdAt);
+      const now = new Date();
+      const end = new Date(created.getTime() + (durationHours * 60 * 60 * 1000));
+      const diffMs = end - now;
+      if (diffMs <= 0) return 'Ended';
+      const hours = Math.floor(diffMs / (60 * 60 * 1000));
+      const mins = Math.floor((diffMs % (60 * 60 * 1000)) / (60 * 1000));
+      if (hours > 0) return `${hours}h ${mins}m`;
+      return `${mins}m`;
+    } catch (e) { return '24h'; }
+  };
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/listings/${id}`)
@@ -96,7 +110,7 @@ export default function Detail({ showToast }) {
         ) : (
           listing.type === 'item' ? '🎮' : '🌿'
         )}
-        <div className="detail-timer-tag">⏱ 22h left</div>
+        <div className="detail-timer-tag">⏱ {getTimeRemaining(listing.createdat, listing.duration)} {t?.left || 'left'}</div>
       </div>
       <div className="scroll-area" style={{paddingBottom:'80px'}}>
         <div className="detail-body">

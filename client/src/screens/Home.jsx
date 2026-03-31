@@ -19,6 +19,25 @@ export default function Home({ showToast, t }) {
     'Kumalo', 'Suburbs', 'Malindela', 'Ilanda'
   ];
 
+  const getTimeRemaining = (createdAt, durationHours) => {
+    try {
+      const created = new Date(createdAt);
+      const now = new Date();
+      const end = new Date(created.getTime() + (durationHours * 60 * 60 * 1000));
+      const diffMs = end - now;
+
+      if (diffMs <= 0) return 'Ended';
+
+      const hours = Math.floor(diffMs / (60 * 60 * 1000));
+      const mins = Math.floor((diffMs % (60 * 60 * 1000)) / (60 * 1000));
+
+      if (hours > 0) return `${hours}h ${mins}m`;
+      return `${mins}m`;
+    } catch (e) {
+      return '24h';
+    }
+  };
+
   useEffect(() => {
     try {
       const stored = localStorage.getItem('plug_user');
@@ -208,7 +227,7 @@ export default function Home({ showToast, t }) {
                         ) : (
                           l.type === 'item' ? '🎮' : '🌿'
                         )}
-                        <div className="urgency-timer">22h</div>
+                        <div className="urgency-timer">{getTimeRemaining(l.createdat, l.duration)}</div>
                       </div>
                       <div className="urgency-info"><h5>{l.title}</h5><div className="urgency-bid">${l.price || 'Blind'}</div></div>
                     </div>
@@ -243,7 +262,7 @@ export default function Home({ showToast, t }) {
                     </div>
                     <div className="listing-body">
                       <h4>{l.title}</h4>
-                      <div className="listing-meta"><span className="listing-price">${(l.price || 0).toFixed(2)}</span><span className="listing-time">22h {t.left}</span></div>
+                      <div className="listing-meta"><span className="listing-price">${(l.price || 0).toFixed(2)}</span><span className="listing-time">{getTimeRemaining(l.createdat, l.duration)} {t.left}</span></div>
                       <div className="listing-suburb">📍 {l.suburb}</div>
                       <div className="ubuntu-chip"><div className="dot dot-g"></div> {l.ubuntupoints} {t.pts} · {l.fullname}</div>
                     </div>
