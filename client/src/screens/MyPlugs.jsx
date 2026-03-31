@@ -18,7 +18,12 @@ export default function MyPlugs({ showToast, onSuccess }) {
     fetch(`${API_BASE_URL}/api/users/${user.id}/plugs`)
       .then(res => res.json())
       .then(data => {
-        setPlugs(data);
+        if (data && !data.error) {
+          setPlugs({
+            requests: Array.isArray(data.requests) ? data.requests : [],
+            hustle: Array.isArray(data.hustle) ? data.hustle : []
+          });
+        }
         setLoading(false);
       })
       .catch(err => {
@@ -43,7 +48,7 @@ export default function MyPlugs({ showToast, onSuccess }) {
 
         {tab === 'req' && (
           <div className="plugs-panel active">
-            {plugs.requests.length > 0 ? plugs.requests.map(r => (
+            {plugs?.requests?.length > 0 ? plugs.requests.map(r => (
               <div key={r.id} className="plug-item">
                 <div className="plug-item-header">
                   <div><div className="plug-item-title">{r.title}</div><div style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'3px'}}>📍 {r.suburb} · You bid ${Number(r.myBid || 0).toFixed(2)}</div></div>
@@ -66,7 +71,7 @@ export default function MyPlugs({ showToast, onSuccess }) {
 
         {tab === 'hus' && (
           <div className="plugs-panel active">
-            {plugs.hustle.length > 0 ? plugs.hustle.map(h => (
+            {plugs?.hustle?.length > 0 ? plugs.hustle.map(h => (
               <div key={h.id} className="plug-item">
                 <div className="plug-item-header">
                   <div><div className="plug-item-title">{h.title}</div><div style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'3px'}}>📍 {h.suburb} · Status: {h.status}</div></div>

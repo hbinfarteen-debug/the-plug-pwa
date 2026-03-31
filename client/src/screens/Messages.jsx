@@ -13,7 +13,11 @@ export default function Messages() {
     fetch(`/api/chats/${user.id}`)
       .then(res => res.json())
       .then(data => {
-        setChats(data);
+        if (Array.isArray(data)) {
+          setChats(data);
+        } else {
+          setChats([]);
+        }
         setLoading(false);
       })
       .catch(err => {
@@ -36,7 +40,7 @@ export default function Messages() {
         
         {loading ? (
           <div style={{padding:'20px', textAlign:'center', color:'var(--text-muted)'}}>Loading chats...</div>
-        ) : chats.length === 0 ? (
+        ) : !chats || chats.length === 0 ? (
           <div style={{padding:'40px 20px', textAlign:'center', color:'var(--text-muted)'}}>
             <div style={{fontSize:'48px', marginBottom:'20px'}}>💬</div>
             <h3>No messages yet</h3>
