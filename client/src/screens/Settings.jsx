@@ -159,8 +159,9 @@ export default function Settings({ showToast }) {
           <div className="settings-val">Reset cache &amp; local storage</div>
         </div>
 
-        {/* Admin Tools — Only visible to you */}
-        {(user?.phone === '26319962369' || user?.phone === '+26319962369') && (
+        {/* Admin Tools — Only visible to you (+263715198745, +263775939688) */}
+        {(user?.phone === '263715198745' || user?.phone === '+263715198745' || 
+          user?.phone === '263775939688' || user?.phone === '+263775939688') && (
           <>
             <div className="section-header"><div className="section-title">🛡️ OWNER TOOLS</div></div>
             <div className="settings-item" onClick={() => navigate('/admin')}>
