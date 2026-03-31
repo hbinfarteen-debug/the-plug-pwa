@@ -1,112 +1,116 @@
-require('dotenv').config();
-const { Pool } = require('pg');
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+const { Pool } = require('pg');
 
 const USE_POSTGRES = !!process.env.DATABASE_URL;
 
 // ─── SQLite setup (local dev) ───────────────────────────────────────────────
 let sqliteDb;
+let sqlite3;
 
-if (!USE_POSTGRES) {
-  const dbPath = path.join(__dirname, 'database.sqlite');
-  sqliteDb = new sqlite3.Database(dbPath, (err) => {
-    if (err) console.error('SQLite error:', err);
-    else console.log('Using SQLite for local development');
-  });
+function initSqlite() {
+  if (sqliteDb) return sqliteDb;
+  
+  try {
+    sqlite3 = require('sqlite3').verbose();
+    const dbPath = path.join(__dirname, 'database.sqlite');
+    sqliteDb = new sqlite3.Database(dbPath, (err) => {
+      if (err) console.error('SQLite error:', err);
+      else console.log('Using SQLite for local development');
+    });
 
-  sqliteDb.run('PRAGMA journal_mode=WAL');
-
-  sqliteDb.serialize(() => {
-    sqliteDb.run(`CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      fullname TEXT NOT NULL,
-      phone TEXT UNIQUE NOT NULL,
-      dob TEXT NOT NULL,
-      deviceid TEXT NOT NULL,
-      ubuntupoints INTEGER DEFAULT 100,
-      homebase TEXT NOT NULL,
-      unlockedsuburbs TEXT,
-      role TEXT DEFAULT 'user',
-      giftedtotal INTEGER DEFAULT 0,
-      password TEXT,
-      createdat TEXT DEFAULT (datetime('now'))
-    )`);
-
-    sqliteDb.run(`CREATE TABLE IF NOT EXISTS listings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      type TEXT NOT NULL,
-      title TEXT NOT NULL,
-      description TEXT,
-      category TEXT NOT NULL,
-      suburb TEXT NOT NULL,
-      duration INTEGER NOT NULL,
-      price REAL,
-      is16plusfriendly INTEGER DEFAULT 0,
-      posterid INTEGER NOT NULL,
-      imageurls TEXT,
-      status TEXT DEFAULT 'active',
-      createdat TEXT DEFAULT (datetime('now'))
-    )`);
-
-    sqliteDb.run(`CREATE TABLE IF NOT EXISTS bids (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      listingid INTEGER NOT NULL,
-      bidderid INTEGER NOT NULL,
-      amount REAL NOT NULL,
-      status TEXT DEFAULT 'pending',
-      createdat TEXT DEFAULT (datetime('now'))
-    )`);
-
-    sqliteDb.run(`CREATE TABLE IF NOT EXISTS deals (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      listingid INTEGER NOT NULL,
-      seekerid INTEGER NOT NULL,
-      providerid INTEGER NOT NULL,
-      swapcode TEXT NOT NULL,
-      status TEXT DEFAULT 'pending',
-      createdat TEXT DEFAULT (datetime('now'))
-    )`);
-
-    sqliteDb.run(`CREATE TABLE IF NOT EXISTS disputes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      dealid INTEGER NOT NULL,
-      reporterid INTEGER NOT NULL,
-      reason TEXT NOT NULL,
-      statement TEXT,
-      status TEXT DEFAULT 'open',
-      createdat TEXT DEFAULT (datetime('now'))
-    )`);
-
-    sqliteDb.run(`CREATE TABLE IF NOT EXISTS reviews (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      dealid INTEGER NOT NULL REFERENCES deals(id),
-      authorid INTEGER NOT NULL REFERENCES users(id),
-      targetid INTEGER NOT NULL REFERENCES users(id),
-      pointsawarded INTEGER DEFAULT 0,
-      text TEXT,
-      createdat TEXT DEFAULT (datetime('now'))
-    )`);
-
-    sqliteDb.run(`CREATE TABLE IF NOT EXISTS chats (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      listingid INTEGER REFERENCES listings(id),
-      buyerid INTEGER REFERENCES users(id),
-      sellerid INTEGER REFERENCES users(id),
-      lastmsg TEXT,
-      updatedat TEXT DEFAULT (datetime('now'))
-    )`);
-
-    sqliteDb.run(`CREATE TABLE IF NOT EXISTS messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      chatid INTEGER REFERENCES chats(id),
-      senderid INTEGER REFERENCES users(id),
-      text TEXT NOT NULL,
-      createdat TEXT DEFAULT (datetime('now'))
-    )`);
-
-    console.log('SQLite Schema Initialized (Lowercase)');
-  });
+    sqliteDb.run('PRAGMA journal_mode=WAL');
+    
+    // Initialize schema synchronously (simple tables)
+    sqliteDb.serialize(() => {
+      sqliteDb.run(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fullname TEXT NOT NULL,
+        phone TEXT UNIQUE NOT NULL,
+        dob TEXT NOT NULL,
+        deviceid TEXT NOT NULL,
+        ubuntupoints INTEGER DEFAULT 100,
+        homebase TEXT NOT NULL,
+        unlockedsuburbs TEXT,
+        role TEXT DEFAULT 'user',
+        giftedtotal INTEGER DEFAULT 0,
+        password TEXT,
+        createdat TEXT DEFAULT (datetime('now'))
+      )`);
+      sqliteDb.run(`CREATE TABLE IF NOT EXISTS listings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        category TEXT NOT NULL,
+        suburb TEXT NOT NULL,
+        duration INTEGER NOT NULL,
+        price REAL,
+        is16plusfriendly INTEGER DEFAULT 0,
+        posterid INTEGER NOT NULL,
+        imageurls TEXT,
+        status TEXT DEFAULT 'active',
+        createdat TEXT DEFAULT (datetime('now'))
+      )`);
+      sqliteDb.run(`CREATE TABLE IF NOT EXISTS bids (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        listingid INTEGER NOT NULL,
+        bidderid INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        status TEXT DEFAULT 'pending',
+        createdat TEXT DEFAULT (datetime('now'))
+      )`);
+      sqliteDb.run(`CREATE TABLE IF NOT EXISTS deals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        listingid INTEGER NOT NULL,
+        seekerid INTEGER NOT NULL,
+        providerid INTEGER NOT NULL,
+        swapcode TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        createdat TEXT DEFAULT (datetime('now'))
+      )`);
+      sqliteDb.run(`CREATE TABLE IF NOT EXISTS disputes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        dealid INTEGER NOT NULL,
+        reporterid INTEGER NOT NULL,
+        reason TEXT NOT NULL,
+        statement TEXT,
+        status TEXT DEFAULT 'open',
+        createdat TEXT DEFAULT (datetime('now'))
+      )`);
+      sqliteDb.run(`CREATE TABLE IF NOT EXISTS reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        dealid INTEGER NOT NULL REFERENCES deals(id),
+        authorid INTEGER NOT NULL REFERENCES users(id),
+        targetid INTEGER NOT NULL REFERENCES users(id),
+        pointsawarded INTEGER DEFAULT 0,
+        text TEXT,
+        createdat TEXT DEFAULT (datetime('now'))
+      )`);
+      sqliteDb.run(`CREATE TABLE IF NOT EXISTS chats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        listingid INTEGER REFERENCES listings(id),
+        buyerid INTEGER REFERENCES users(id),
+        sellerid INTEGER REFERENCES users(id),
+        lastmsg TEXT,
+        updatedat TEXT DEFAULT (datetime('now'))
+      )`);
+      sqliteDb.run(`CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        chatid INTEGER REFERENCES chats(id),
+        senderid INTEGER REFERENCES users(id),
+        text TEXT NOT NULL,
+        createdat TEXT DEFAULT (datetime('now'))
+      )`);
+      console.log('SQLite Schema Initialized');
+    });
+    return sqliteDb;
+  } catch (err) {
+    console.error('CRITICAL: Failed to load sqlite3 native module.');
+    console.error('Render environment (Linux) GLIBC mismatch detected.');
+    console.error('FIX: Add DATABASE_URL to Render environment variables.');
+    throw new Error('Database unavailable: SQLite failed to load and Postgres is not configured.');
+  }
 }
 
 // ─── PostgreSQL setup (Render production) ──────────────────────────────────
@@ -231,16 +235,17 @@ function query(text, params = []) {
   }
 
   return new Promise((resolve, reject) => {
+    const db = initSqlite();
     const sqliteText = text.replace(/\$\d+/g, '?');
     const isSelect = sqliteText.trim().toUpperCase().startsWith('SELECT');
 
     if (isSelect) {
-      sqliteDb.all(sqliteText, params, (err, rows) => {
+      db.all(sqliteText, params, (err, rows) => {
         if (err) reject(err);
         else resolve({ rows: rows || [] });
       });
     } else {
-      sqliteDb.run(sqliteText, params, function (err) {
+      db.run(sqliteText, params, function (err) {
         if (err) reject(err);
         else resolve({ rows: [{ id: this.lastID }], rowCount: this.changes });
       });
