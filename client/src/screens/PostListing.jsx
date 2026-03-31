@@ -12,6 +12,10 @@ export default function PostListing({ showToast }) {
   const [category, setCategory] = useState('Tech & Electronics');
   const [price, setPrice] = useState('1.00');
   const [is16PlusFriendly, setIs16PlusFriendly] = useState(false);
+  const [selectedSuburb, setSelectedSuburb] = useState(() => {
+    const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
+    return user.homeBase || user.homebase || '';
+  });
 
   const [duration, setDuration] = useState(24);
   const [images, setImages] = useState([]);
@@ -50,7 +54,7 @@ export default function PostListing({ showToast }) {
           title,
           description,
           category,
-          suburb: user.homeBase,
+          suburb: selectedSuburb,
           duration,
           price: type === 'item' ? parseFloat(price) : null,
           is16PlusFriendly,
@@ -119,6 +123,21 @@ export default function PostListing({ showToast }) {
               <option value="Cleaning">🧹 Cleaning</option>
               <option value="Food & Catering">🍕 Food & Catering</option>
             </select>
+          </div>
+          
+          <div className="form-group">
+            <label className="form-label">LISTING LOCATION</label>
+            <div className="dur-grid" style={{gridTemplateColumns:'repeat(auto-fill, minmax(100px, 1fr))'}}>
+              {[
+                JSON.parse(localStorage.getItem('plug_user') || '{}').homeBase || JSON.parse(localStorage.getItem('plug_user') || '{}').homebase,
+                ...(JSON.parse(localStorage.getItem('plug_user') || '{}').ubuntupoints >= 150 ? ['Burnside', 'Hillside'] : [])
+              ].filter(Boolean).map(loc => (
+                <div key={loc} className={`dur-card ${selectedSuburb===loc?'sel':''}`} onClick={()=>setSelectedSuburb(loc)}>
+                  <div className="h" style={{fontSize:'12px'}}>{loc}</div>
+                  <div className="hl">{loc === (JSON.parse(localStorage.getItem('plug_user') || '{}').homeBase || JSON.parse(localStorage.getItem('plug_user') || '{}').homebase) ? 'Home Base' : 'Unlocked'}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="form-group">
