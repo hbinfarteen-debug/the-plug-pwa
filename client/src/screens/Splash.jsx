@@ -14,7 +14,6 @@ export default function Splash() {
           <button className="btn-primary" onClick={() => navigate('/onboard')}>Get Started ›</button>
           <button className="btn-ghost" onClick={() => navigate('/home')}>Already a Plug? Sign In</button>
         </div>
-        <p style={{marginTop:'36px',fontSize:'12px',color:'var(--text-dim)'}}>Triple-tap logo anywhere to access Admin View</p>
       </div>
     </div>
   );
