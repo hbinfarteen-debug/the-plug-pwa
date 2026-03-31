@@ -53,7 +53,7 @@ app.get('/api/auth/check-name/:name', async (req, res) => {
 
 app.get('/api/users/:id', async (req, res) => {
   try {
-    const result = await db.query('SELECT * FROM users WHERE id = $1', [req.params.id]);
+    const result = await db.query('SELECT id, fullname, fullname as "fullName", homebase, homebase as "homeBase", ubuntupoints, ubuntupoints as "ubuntuPoints" FROM users WHERE id = $1', [req.params.id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     res.json(result.rows[0]);
   } catch (err) {
@@ -65,11 +65,16 @@ app.get('/api/users/:id', async (req, res) => {
 app.get('/api/listings', async (req, res) => {
   try {
     const result = await db.query(`
-      SELECT listings.*, users.fullname, users.ubuntupoints, users.homebase 
+      SELECT listings.*, 
+             listings."posterId" as "posterId", 
+             listings."imageUrls" as "imageUrls", 
+             listings."is16PlusFriendly" as "is16PlusFriendly", 
+             listings."createdAt" as "createdAt",
+             users.fullname, users.ubuntupoints, users.homebase 
       FROM listings 
-      JOIN users ON listings.posterId = users.id 
+      JOIN users ON listings."posterId" = users.id 
       WHERE status = 'active' 
-      ORDER BY listings.createdAt DESC
+      ORDER BY listings."createdAt" DESC
     `);
     res.json(result.rows);
   } catch (err) {
@@ -80,9 +85,14 @@ app.get('/api/listings', async (req, res) => {
 app.get('/api/listings/:id', async (req, res) => {
   try {
     const listingRes = await db.query(`
-      SELECT listings.*, users.fullname, users.ubuntupoints, users.homebase 
+      SELECT listings.*, 
+             listings."posterId" as "posterId", 
+             listings."imageUrls" as "imageUrls", 
+             listings."is16PlusFriendly" as "is16PlusFriendly", 
+             listings."createdAt" as "createdAt",
+             users.fullname, users.ubuntupoints, users.homebase 
       FROM listings 
-      JOIN users ON listings.posterId = users.id 
+      JOIN users ON listings."posterId" = users.id 
       WHERE listings.id = $1
     `, [req.params.id]);
 
@@ -92,10 +102,14 @@ app.get('/api/listings/:id', async (req, res) => {
 
     // Get all bids
     const bidsRes = await db.query(`
-      SELECT bids.*, users.fullname, users.ubuntupoints 
+      SELECT bids.*, 
+             bids."listingId" as "listingId", 
+             bids."bidderId" as "bidderId", 
+             bids."createdAt" as "createdAt",
+             users.fullname, users.ubuntupoints 
       FROM bids 
       JOIN users ON bids."bidderId" = users.id 
-      WHERE "listingId" = $1 
+      WHERE bids."listingId" = $1 
       ORDER BY amount DESC
     `, [req.params.id]);
 
@@ -147,7 +161,10 @@ app.get('/api/users/:id/plugs', async (req, res) => {
     
     // Requests: Listings I bid on
     const requestsRes = await db.query(`
-      SELECT listings.*, bids.amount as "myBid", bids.status as "bidStatus" 
+      SELECT listings.*, 
+             listings."posterId" as "posterId",
+             bids.amount as "myBid", 
+             bids.status as "bidStatus" 
       FROM listings 
       JOIN bids ON listings.id = bids."listingId" 
       WHERE bids."bidderId" = $1
@@ -168,6 +185,11 @@ app.get('/api/chats/:userId', async (req, res) => {
   try {
     const result = await db.query(`
       SELECT chats.*, 
+             chats."listingId" as "listingId",
+             chats."buyerId" as "buyerId",
+             chats."sellerId" as "sellerId",
+             chats."lastMsg" as "lastMsg",
+             chats."updatedAt" as "updatedAt",
              u1.fullname as "buyerName", 
              u2.fullname as "sellerName",
              l.title as "listingTitle"
@@ -176,7 +198,7 @@ app.get('/api/chats/:userId', async (req, res) => {
       JOIN users u2 ON chats."sellerId" = u2.id
       LEFT JOIN listings l ON chats."listingId" = l.id
       WHERE "buyerId" = $1 OR "sellerId" = $1
-      ORDER BY "updatedAt" DESC
+      ORDER BY chats."updatedAt" DESC
     `, [userId]);
     res.json(result.rows);
   } catch (err) {
@@ -209,10 +231,15 @@ app.post('/api/chats', async (req, res) => {
 
 app.get('/api/messages/:chatId', async (req, res) => {
   try {
-    const result = await db.query(
-      'SELECT * FROM messages WHERE "chatId" = $1 ORDER BY createdAt ASC',
-      [req.params.chatId]
-    );
+    const result = await db.query(`
+      SELECT messages.*, 
+             messages."chatId" as "chatId",
+             messages."senderId" as "senderId",
+             messages."createdAt" as "createdAt"
+      FROM messages 
+      WHERE "chatId" = $1 
+      ORDER BY messages."createdAt" ASC
+    `, [req.params.chatId]);
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });

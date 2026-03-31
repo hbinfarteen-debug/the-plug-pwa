@@ -47,7 +47,7 @@ export default function Detail({ showToast }) {
   const startChat = async () => {
     const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
     if (!user.id) return navigate('/onboard');
-    if (user.id === listing.posterId) return showToast("This is your listing!", 'info');
+    if (user.id === listing?.posterId) return showToast("This is your listing!", 'info');
 
     setBiting(true);
     try {
@@ -88,13 +88,13 @@ export default function Detail({ showToast }) {
           <h2>{listing.title}</h2>
           <div className="dprice">
             ${listing.bids && listing.bids.length > 0 
-              ? listing.bids[0].amount.toFixed(2) 
-              : (listing.price || 0).toFixed(2)} 
+              ? Number(listing.bids[0].amount || 0).toFixed(2) 
+              : Number(listing.price || 0).toFixed(2)} 
             <span>{listing.type === 'item' ? 'current bid' : 'gig'}</span>
           </div>
-          <div className="seller-row" onClick={() => navigate(`/profile/${listing.posterId}`)}>
-            <div className="sav" style={{background:'var(--surface2)', display:'grid', placeItems:'center', borderRadius:'8px', width:'40px', height:'40px'}}>{listing.fullname?.charAt(0) || '👤'}</div>
-            <div style={{flex:1}}><div style={{fontSize:'14px',fontWeight:600}}>{listing.fullname}</div><div style={{fontSize:'12px',color:'var(--text-muted)'}}>📍 {listing.suburb} · <span style={{color:'var(--green)',fontWeight:700}}>{listing.ubuntupoints} pts</span></div></div>
+          <div className="seller-row" onClick={() => navigate(`/profile/${listing?.posterId}`)}>
+            <div className="sav" style={{background:'var(--surface2)', display:'grid', placeItems:'center', borderRadius:'8px', width:'40px', height:'40px'}}>{listing?.fullname?.charAt(0) || '👤'}</div>
+            <div style={{flex:1}}><div style={{fontSize:'14px',fontWeight:600}}>{listing?.fullname || 'Plug Seller'}</div><div style={{fontSize:'12px',color:'var(--text-muted)'}}>📍 {listing?.suburb} · <span style={{color:'var(--green)',fontWeight:700}}>{listing?.ubuntupoints || 0} pts</span></div></div>
             <div>›</div>
           </div>
           <p style={{fontSize:'14px',color:'var(--text-muted)',lineHeight:1.7,marginBottom:'16px'}}>{listing.description}</p>
@@ -124,9 +124,9 @@ export default function Detail({ showToast }) {
             <h4>Recent Bids</h4>
             {listing.bids?.length > 0 ? (
               listing.bids.map(b => (
-                <div key={b.id} style={{padding:'10px 0', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between'}}>
-                  <span>{b.fullname} ({b.ubuntupoints} pts)</span>
-                  <span style={{color:'var(--green)', fontWeight:700}}>${b.amount.toFixed(2)}</span>
+                <div key={b.id} style={{padding:'10px 0', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', fontSize:'13px'}}>
+                  <span>{b.fullname || 'Bidder'} ({b.ubuntupoints || 0} pts)</span>
+                  <span style={{color:'var(--green)', fontWeight:700}}>${Number(b.amount || 0).toFixed(2)}</span>
                 </div>
               ))
             ) : <p style={{fontSize:'12px', color:'var(--text-muted)'}}>No bids yet. Be the first!</p>}

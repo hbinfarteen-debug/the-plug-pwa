@@ -46,8 +46,8 @@ export default function MyPlugs({ showToast, onSuccess }) {
             {plugs.requests.length > 0 ? plugs.requests.map(r => (
               <div key={r.id} className="plug-item">
                 <div className="plug-item-header">
-                  <div><div className="plug-item-title">{r.title}</div><div style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'3px'}}>📍 {r.suburb} · You bid ${r.myBid.toFixed(2)}</div></div>
-                  <div className={`pstatus ${r.bidStatus === 'accepted' ? 's-pending' : 's-active'}`}>{r.bidStatus.toUpperCase()}</div>
+                  <div><div className="plug-item-title">{r.title}</div><div style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'3px'}}>📍 {r.suburb} · You bid ${Number(r.myBid || 0).toFixed(2)}</div></div>
+                  <div className={`pstatus ${r.bidStatus === 'accepted' ? 's-pending' : 's-active'}`}>{String(r.bidStatus || 'PENDING').toUpperCase()}</div>
                 </div>
                 {r.bidStatus === 'accepted' && (
                   <div className="swap-code">

@@ -54,7 +54,7 @@ export default function Messages() {
                   </div>
                   <div style={{flex:1}}>
                     <div style={{display:'flex', justifyContent:'space-between', marginBottom:'4px'}}>
-                      <span style={{fontWeight:700, fontSize:'15px'}}>{otherName}</span>
+                      <span style={{fontWeight:700, fontSize:'15px'}}>{otherName || 'Unknown User'}</span>
                       <span style={{fontSize:'10px', color:'var(--text-dim)'}}>
                         {chat.updatedAt ? new Date(chat.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
                       </span>

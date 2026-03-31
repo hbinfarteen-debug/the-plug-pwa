@@ -92,7 +92,7 @@ export default function Chat() {
           }}>
             {m.text}
             <div style={{fontSize:'10px', marginTop:'4px', opacity:0.6, textAlign:'right'}}>
-              {new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
             </div>
           </div>
         ))}

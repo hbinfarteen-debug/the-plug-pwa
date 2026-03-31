@@ -28,7 +28,7 @@ export default function PublicProfile({ showToast }) {
   if (loading) return <div className="screen active"><div className="scroll-area">Loading profile...</div></div>;
   if (!user) return <div className="screen active"><div className="scroll-area">User not found</div></div>;
 
-  const reputation = user.ubuntuPoints > 200 ? 'Elite Plug' : user.ubuntuPoints > 120 ? 'Trusted Plug' : 'New Plug';
+  const reputation = (user.ubuntuPoints || user.ubuntupoints || 0) > 200 ? 'Elite Plug' : (user.ubuntuPoints || user.ubuntupoints || 0) > 120 ? 'Trusted Plug' : 'New Plug';
 
   return (
     <div className="screen active">
@@ -41,8 +41,8 @@ export default function PublicProfile({ showToast }) {
       <div className="scroll-area">
         <div className="profile-header">
           <div className="avatar">👨🏾</div>
-          <h2 className="profile-name">{user.fullName}</h2>
-          <div className="profile-suburb">📍 {user.homeBase} · <span style={{color:'var(--green)', fontWeight:700}}>{user.ubuntuPoints} pts</span></div>
+          <h2 className="profile-name">{user.fullName || user.fullname || 'Plug Seller'}</h2>
+          <div className="profile-suburb">📍 {user.homeBase || user.homebase || '...'} · <span style={{color:'var(--green)', fontWeight:700}}>{user.ubuntuPoints || user.ubuntupoints || 0} pts</span></div>
           <div style={{marginTop:'10px'}}>
              <span className="badge-chip green">⭐ {reputation}</span>
           </div>
@@ -69,7 +69,7 @@ export default function PublicProfile({ showToast }) {
         <div className="badges-row">
           <div className="badge-chip">🤝 Early Adopter</div>
           <div className="badge-chip green">⚡ Fast Responder</div>
-          <div className="badge-chip">📍 {user.homeBase} Local</div>
+          <div className="badge-chip">📍 {user.homeBase || user.homebase || 'Local'} Zone</div>
         </div>
 
         <div className="section-header">
