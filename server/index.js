@@ -65,7 +65,7 @@ app.get('/api/users/:id', async (req, res) => {
 app.get('/api/listings', async (req, res) => {
   try {
     const result = await db.query(`
-      SELECT listings.*, users.fullName, users."ubuntuPoints", users."homeBase" 
+      SELECT listings.*, users.fullname, users.ubuntupoints, users.homebase 
       FROM listings 
       JOIN users ON listings.posterId = users.id 
       WHERE status = 'active' 
@@ -80,7 +80,7 @@ app.get('/api/listings', async (req, res) => {
 app.get('/api/listings/:id', async (req, res) => {
   try {
     const listingRes = await db.query(`
-      SELECT listings.*, users.fullName, users."ubuntuPoints", users."homeBase" 
+      SELECT listings.*, users.fullname, users.ubuntupoints, users.homebase 
       FROM listings 
       JOIN users ON listings.posterId = users.id 
       WHERE listings.id = $1
@@ -92,7 +92,7 @@ app.get('/api/listings/:id', async (req, res) => {
 
     // Get all bids
     const bidsRes = await db.query(`
-      SELECT bids.*, users.fullName, users."ubuntuPoints" 
+      SELECT bids.*, users.fullname, users.ubuntupoints 
       FROM bids 
       JOIN users ON bids."bidderId" = users.id 
       WHERE "listingId" = $1 

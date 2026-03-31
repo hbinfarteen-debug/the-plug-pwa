@@ -38,8 +38,8 @@ export default function Profile({ showToast }) {
             😊
             {vacation && <div className="vmode-badge">💤</div>}
           </div>
-          <div className="profile-name">{user?.fullName || 'Barry M.'}</div>
-          <div className="profile-suburb">📍 {user?.homeBase || 'Makokoba'} · Bulawayo</div>
+          <div className="profile-name">{user?.fullname || 'Loading...'}</div>
+          <div className="profile-suburb">📍 {user?.homebase || '...'} · Bulawayo</div>
           <div style={{marginTop:'8px',display:'flex',gap:'8px',justifyContent:'center',flexWrap:'wrap'}}>
             <span className="ubuntu-chip"><div className="dot dot-g"></div> Trusted Plug</span>
             <span className="ubuntu-chip"><div className="dot dot-g"></div> ✅ ID Verified</span>
@@ -48,11 +48,11 @@ export default function Profile({ showToast }) {
         
         <div className="ubuntu-meter">
           <div className="meter-top">
-            <span className="meter-pts">{user?.ubuntuPoints || 138}</span>
-            <span className="meter-rank">🥈 Silver Plug</span>
+            <span className="meter-pts">{user?.ubuntupoints || 0}</span>
+            <span className="meter-rank">{user?.ubuntupoints >= 150 ? '🥈 Silver Plug' : '🥉 Bronze Plug'}</span>
           </div>
-          <div className="prog-bar"><div className="prog-fill" style={{width:'46%'}}></div></div>
-          <div className="meter-sub">12 pts to next unlock · Milestone: 150 pts → 2 new neighborhoods</div>
+          <div className="prog-bar"><div className="prog-fill" style={{width: `${Math.min((user?.ubuntupoints || 0) / 150 * 100, 100)}%`}}></div></div>
+          <div className="meter-sub">{Math.max(150 - (user?.ubuntupoints || 0), 0)} pts to next unlock · Milestone: 150 pts → 2 new neighborhoods</div>
         </div>
         
         <div className="stats-grid">
@@ -63,10 +63,8 @@ export default function Profile({ showToast }) {
 
         <div style={{padding:'4px 20px 6px',fontFamily:'"Syne",sans-serif',fontSize:'12px',fontWeight:700,letterSpacing:'2px',textTransform:'uppercase',color:'var(--text-muted)'}}>Community Reviews</div>
         <div className="reviews-list">
-          <div className="review-item">
-            <div className="review-header"><div className="review-name">👩🏾 Nomsa D.</div><div className="review-pts">+5 Ubuntu</div></div>
-            <div className="review-text">"Showed up on time, mowed perfectly. Very professional!"</div>
-            <div className="review-date">2 weeks ago · Lawn Mowing Gig</div>
+          <div style={{padding:'20px', textAlign:'center', color:'var(--text-muted)', fontSize:'13px'}}>
+            No reviews yet. Complete deals to earn Ubuntu points!
           </div>
         </div>
 

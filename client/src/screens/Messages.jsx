@@ -4,10 +4,7 @@ import { useNavigate } from 'react-router-dom';
 export default function Messages() {
   const navigate = useNavigate();
 
-  const chats = [
-    { id: 1, name: 'Chukwudi M.', lastMsg: 'Is the PS3 still available?', time: '2m ago', unread: true },
-    { id: 2, name: 'Admin', lastMsg: 'Welcome to The Plug community!', time: '1h ago', unread: false },
-  ];
+  const chats = [];
 
   return (
     <div className="screen active">

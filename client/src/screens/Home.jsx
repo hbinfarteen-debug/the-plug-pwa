@@ -4,11 +4,14 @@ import { API_BASE_URL } from '../config';
 
 export default function Home({ showToast }) {
   const navigate = useNavigate();
-  const [listings, setListings] = useState([]);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
+    const localUser = JSON.parse(localStorage.getItem('plug_user'));
+    setUser(localUser);
+
     fetch(`${API_BASE_URL}/api/listings`)
       .then(res => res.json())
       .then(data => {
@@ -21,8 +24,13 @@ export default function Home({ showToast }) {
       });
   }, []);
 
-  const items = listings.filter(l => l.type === 'item');
-  const gigs = listings.filter(l => l.type === 'gig');
+  // Filter by user's homebase
+  const filteredListings = listings.filter(l => 
+    !user || l.suburb === user.homebase
+  );
+
+  const items = filteredListings.filter(l => l.type === 'item');
+  const gigs = filteredListings.filter(l => l.type === 'gig');
 
   return (
     <div className="screen active">
@@ -40,6 +48,11 @@ export default function Home({ showToast }) {
           <div className={`feed-tab ${filter==='gig'?'active':''}`} onClick={()=>setFilter('gig')}>Gigs</div>
         </div>
 
+        <div style={{padding:'10px 20px', backgroundColor:'var(--surface)', borderBottom:'1px solid var(--border)', fontSize:'12px', color:'var(--text-muted)'}}>
+           📍 Showing Plugs in <strong>{user?.homebase || 'your area'}</strong> 
+           {user?.ubuntupoints < 150 && <span style={{marginLeft:'5px'}}>(Get 150 pts to unlock more)</span>}
+        </div>
+
         {loading ? (
           <div style={{padding:'20px',textAlign:'center'}}>Loading the feed...</div>
         ) : (
@@ -51,11 +64,11 @@ export default function Home({ showToast }) {
                   <div className="see-all">See all</div>
                 </div>
                 <div className="urgency-rail">
-                  {listings.slice(0, 4).map(l => (
+                  {filteredListings.slice(0, 4).map(l => (
                     <div key={l.id} className="urgency-card" onClick={()=>navigate(`/detail/${l.id}`)}>
                       <div className="urgency-img" style={{padding:0, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                        {l.imageUrls && JSON.parse(l.imageUrls).length > 0 ? (
-                          <img src={JSON.parse(l.imageUrls)[0]} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="listing" />
+                        {l.imageUrls ? (
+                          <img src={typeof l.imageUrls === 'string' ? JSON.parse(l.imageUrls)[0] : l.imageUrls[0]} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="listing" />
                         ) : (
                           l.type === 'item' ? '🎮' : '🌿'
                         )}
@@ -74,8 +87,8 @@ export default function Home({ showToast }) {
                 {items.length > 0 ? items.map(l => (
                   <div key={l.id} className="listing-card" onClick={()=>navigate(`/detail/${l.id}`)}>
                     <div className="listing-thumb" style={{padding:0, overflow:'hidden'}}>
-                      {l.imageUrls && JSON.parse(l.imageUrls).length > 0 ? (
-                        <img src={JSON.parse(l.imageUrls)[0]} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="listing" />
+                      {l.imageUrls ? (
+                        <img src={typeof l.imageUrls === 'string' ? JSON.parse(l.imageUrls)[0] : l.imageUrls[0]} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="listing" />
                       ) : (
                         '🎮'
                       )}
@@ -84,10 +97,10 @@ export default function Home({ showToast }) {
                       <h4>{l.title}</h4>
                       <div className="listing-meta"><span className="listing-price">${l.price?.toFixed(2)}</span><span className="listing-time">22h left</span></div>
                       <div className="listing-suburb">📍 {l.suburb}</div>
-                      <div className="ubuntu-chip"><div className="dot dot-g"></div> {l.ubuntuPoints} pts · {l.fullName}</div>
+                      <div className="ubuntu-chip"><div className="dot dot-g"></div> {l.ubuntupoints} pts · {l.fullname}</div>
                     </div>
                   </div>
-                )) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>No items listed yet.</p>}
+                )) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>No items listed in {user?.homebase} yet.</p>}
               </>
             )}
 
@@ -106,7 +119,7 @@ export default function Home({ showToast }) {
                     </div>
                     {l.is16PlusFriendly === 1 && <div style={{marginTop:'9px'}}><span className="youth-tag">✅ 16+ Friendly</span></div>}
                   </div>
-                )) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>No gigs available in your area.</p>}
+                )) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>No gigs available in {user?.homebase}.</p>}
               </>
             )}
           </>
