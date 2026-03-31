@@ -3,6 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { uploadListingImages } from '../supabase';
 import { API_BASE_URL } from '../config';
 
+const ALL_SUBURBS = [
+  'Makokoba', 'Burnside', 'Cowdray Park', 'Nkulumane', 'Hillside', 
+  'Morningside', 'Bradfield', 'Queens Park', 'Magwegwe', 'Pumula', 
+  'Sizinda', 'Entumbane', 'Njube', 'Hyde Park', 'Selborne Park', 
+  'Kumalo', 'Suburbs', 'Malindela', 'Ilanda'
+];
+
 export default function PostListing({ showToast }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -116,7 +123,7 @@ export default function PostListing({ showToast }) {
           </div>
           <div className="form-group">
             <label className="form-label">CATEGORY</label>
-            <select className="form-select" value={category} onChange={(e)=>setCategory(e.target.value)}>
+            <select className="field-input" value={category} onChange={(e)=>setCategory(e.target.value)}>
               <option value="Tech & Electronics">📱 Tech & Electronics</option>
               <option value="Home & Furniture">🏠 Home & Furniture</option>
               <option value="Clothing & Fashion">👕 Clothing & Fashion</option>
@@ -133,16 +140,30 @@ export default function PostListing({ showToast }) {
           
           <div className="form-group">
             <label className="form-label">LISTING LOCATION</label>
-            <div className="dur-grid" style={{gridTemplateColumns:'repeat(auto-fill, minmax(100px, 1fr))'}}>
-              {[
-                JSON.parse(localStorage.getItem('plug_user') || '{}').homeBase || JSON.parse(localStorage.getItem('plug_user') || '{}').homebase,
-                ...(JSON.parse(localStorage.getItem('plug_user') || '{}').ubuntupoints >= 150 ? ['Burnside', 'Hillside'] : [])
-              ].filter(Boolean).map(loc => (
-                <div key={loc} className={`dur-card ${selectedSuburb===loc?'sel':''}`} onClick={()=>setSelectedSuburb(loc)}>
-                  <div className="h" style={{fontSize:'12px'}}>{loc}</div>
-                  <div className="hl">{loc === (JSON.parse(localStorage.getItem('plug_user') || '{}').homeBase || JSON.parse(localStorage.getItem('plug_user') || '{}').homebase) ? 'Home Base' : 'Unlocked'}</div>
-                </div>
-              ))}
+            <div className="dur-grid" style={{gridTemplateColumns:'repeat(auto-fill, minmax(130px, 1fr))', maxHeight:'300px', overflowY:'auto', padding:'5px'}}>
+              {(() => {
+                const u = JSON.parse(localStorage.getItem('plug_user') || '{}');
+                const home = u.homeBase || u.homebase;
+                const isAdmin = u.phone === '263715198745' || u.phone === '+263715198745' || 
+                                u.phone === '263775939688' || u.phone === '+263775939688';
+                
+                if (isAdmin) return ALL_SUBURBS;
+
+                const unlocked = typeof u.unlockedSuburbs === 'string' 
+                  ? JSON.parse(u.unlockedSuburbs || '[]') 
+                  : (u.unlockedSuburbs || []);
+                
+                return Array.from(new Set([home, ...unlocked])).filter(Boolean);
+              })().map(loc => {
+                const u = JSON.parse(localStorage.getItem('plug_user') || '{}');
+                const home = u.homeBase || u.homebase;
+                return (
+                  <div key={loc} className={`dur-card ${selectedSuburb===loc?'sel':''}`} onClick={()=>setSelectedSuburb(loc)} style={{marginBottom:'0'}}>
+                    <div className="h" style={{fontSize:'12px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{loc}</div>
+                    <div className="hl">{loc === home ? 'Home Base' : 'Unlocked'}</div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
