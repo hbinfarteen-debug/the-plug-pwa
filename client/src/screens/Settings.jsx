@@ -229,6 +229,7 @@ export default function Settings({ showToast, t, language, setLanguage }) {
             <div className="settings-item" onClick={() => {
               const pw = prompt('Enter Admin Password:');
               if (pw === '259047changwaMAFIA!') {
+                sessionStorage.setItem('admin_key', pw);
                 navigate('/admin');
               } else {
                 showToast('Wrong password!', 'error');

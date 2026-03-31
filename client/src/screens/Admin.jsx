@@ -18,7 +18,19 @@ export default function Admin({ showToast }) {
   const [sanitizing, setSanitizing] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/admin/stats`, { headers: { 'x-admin-key': sessionStorage.getItem('admin_key') || '' } })
+    let key = sessionStorage.getItem('admin_key');
+    if (!key) {
+      key = prompt('Enter Admin Password to load Commander View:');
+      if (key === '259047changwaMAFIA!') {
+        sessionStorage.setItem('admin_key', key);
+      } else {
+        showToast('Access Denied', 'error');
+        navigate('/settings');
+        return;
+      }
+    }
+
+    fetch(`${API_BASE_URL}/api/admin/stats`, { headers: { 'x-admin-key': key } })
       .then(res => res.json())
       .then(data => setStats(data))
       .catch(console.error);
