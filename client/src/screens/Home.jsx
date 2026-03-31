@@ -116,6 +116,8 @@ export default function Home({ showToast, t }) {
   const isAdmin = user?.phone === '263715198745' || user?.phone === '+263715198745' || 
                   user?.phone === '263775939688' || user?.phone === '+263775939688';
 
+  const unlockedList = getUnlockedList();
+
   const filteredListings = sortedListings.filter(l => {
     if (isAdmin || !user) return true;
     const normSuburb = (l.suburb || '').toLowerCase();
