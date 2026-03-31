@@ -157,6 +157,33 @@ app.post('/api/auth/verify-otp', async (req, res) => {
   }
 });
 
+// ==== Device Verification (FREE - no SMS needed) ====
+app.post('/api/auth/verify-device', async (req, res) => {
+  const { userId, deviceId } = req.body;
+  if (!userId || !deviceId) return res.status(400).json({ error: 'Missing fields' });
+
+  try {
+    // Check if deviceId is blacklisted on another account
+    const blacklistCheck = await db.query(
+      'SELECT id, blacklisted FROM users WHERE deviceid = $1 AND id != $2',
+      [deviceId, userId]
+    );
+    if (blacklistCheck.rows.some(r => r.blacklisted)) {
+      return res.status(403).json({ error: 'This device has been suspended from The Plug.' });
+    }
+
+    // Store device fingerprint and mark verified
+    await db.query(
+      'UPDATE users SET deviceid = $1, phone_verified = TRUE WHERE id = $2',
+      [deviceId, userId]
+    );
+    res.json({ success: true, verified: true });
+  } catch (err) {
+    console.error('Device verify error:', err);
+    res.status(500).json({ error: 'Verification failed' });
+  }
+});
+
 app.get('/api/auth/check-name/:name', async (req, res) => {
   try {
     const result = await db.query('SELECT id FROM users WHERE fullname = $1', [req.params.name]);
