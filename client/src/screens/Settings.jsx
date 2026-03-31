@@ -159,6 +159,17 @@ export default function Settings({ showToast }) {
           <div className="settings-val">Reset cache &amp; local storage</div>
         </div>
 
+        {/* Admin Tools — Only visible to you */}
+        {(user?.phone === '26319962369' || user?.phone === '+26319962369') && (
+          <>
+            <div className="section-header"><div className="section-title">🛡️ OWNER TOOLS</div></div>
+            <div className="settings-item" onClick={() => navigate('/admin')}>
+              <div className="settings-label" style={{color:'var(--amber)', fontWeight:700}}>Commander View</div>
+              <div className="settings-val" style={{color:'var(--amber)'}}>Admin Dashboard →</div>
+            </div>
+          </>
+        )}
+
         <div className="section-header"><div className="section-title">💡 HOW IT WORKS</div></div>
         <div className="how-section">
           <h3>The App</h3>
