@@ -33,6 +33,12 @@ export default function PostListing({ showToast }) {
     
     const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
     if (!user.id) return showToast('Please onboard first!', 'error');
+
+    const isVerified = user.phoneVerified || user.phone_verified;
+    if (!isVerified) {
+      showToast('Verify your device in Settings to post!', 'error');
+      return navigate('/settings');
+    }
     
     setIsUploading(true);
     let imageUrls = [];
@@ -173,14 +179,28 @@ export default function PostListing({ showToast }) {
             </div>
           )}
 
-          <button 
-            className="btn-primary" 
-            style={{width:'100%',justifyContent:'center',fontSize:'16px',padding:'16px', marginTop:'20px', opacity: isUploading ? 0.7 : 1}} 
-            onClick={doPost}
-            disabled={isUploading}
-          >
-            {isUploading ? 'Uploading & Posting...' : 'Go Live 🚀'}
-          </button>
+          {(() => {
+            const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
+            const isVerified = user.phoneVerified || user.phone_verified;
+            return isVerified ? (
+              <button 
+                className="btn-primary" 
+                style={{width:'100%',justifyContent:'center',fontSize:'16px',padding:'16px', marginTop:'20px', opacity: isUploading ? 0.7 : 1}} 
+                onClick={doPost}
+                disabled={isUploading}
+              >
+                {isUploading ? 'Uploading & Posting...' : 'Go Live 🚀'}
+              </button>
+            ) : (
+              <button 
+                className="btn-primary" 
+                style={{width:'100%',justifyContent:'center',fontSize:'16px',padding:'16px', marginTop:'20px', background:'var(--surface2)', color:'var(--text-muted)', border:'1px solid var(--border)'}} 
+                onClick={() => navigate('/settings')}
+              >
+                🔐 Verify identity to post
+              </button>
+            );
+          })()}
         </div>
       </div>
     </div>

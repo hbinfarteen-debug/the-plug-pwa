@@ -27,6 +27,12 @@ export default function Detail({ showToast }) {
     const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
     if (!user.id) return showToast('Please onboard first!', 'error');
 
+    const isVerified = user.phoneVerified || user.phone_verified;
+    if (!isVerified) {
+      showToast('Please verify your device in Settings to bid!', 'error');
+      return navigate('/settings');
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/listings/${id}/bid`, {
         method: 'POST',
@@ -127,7 +133,15 @@ export default function Detail({ showToast }) {
                   style={{flex:1,background:'none',border:'none',outline:'none',color:'var(--text)',fontSize:'18px',fontWeight:700,fontFamily:'"Syne",sans-serif'}} 
                 />
               </div>
-              <button className="btn-primary" style={{padding:'12px 18px'}} onClick={placeBid}>Bid</button>
+              {(() => {
+                const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
+                const isVerified = user.phoneVerified || user.phone_verified;
+                return isVerified ? (
+                  <button className="btn-primary" style={{padding:'12px 18px'}} onClick={placeBid}>Bid</button>
+                ) : (
+                  <button className="btn-primary" style={{padding:'12px 18px', background:'var(--surface2)', color:'var(--text-muted)', border:'1px solid var(--border)'}} onClick={() => navigate('/settings')}>Verify to bid</button>
+                );
+              })()}
             </div>
           </div>
 
