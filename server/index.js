@@ -34,6 +34,16 @@ paynow.returnUrl = process.env.PAYNOW_RETURN_URL || 'http://localhost:5173/home'
 app.use(cors());
 app.use(express.json());
 
+// Admin authentication middleware
+app.use('/api/admin', (req, res, next) => {
+  const key = req.headers['x-admin-key'];
+  if (key === (process.env.ADMIN_API_KEY || '259047changwaMAFIA!')) {
+    next();
+  } else {
+    res.status(403).json({ error: 'Unauthorized: Admin access required' });
+  }
+});
+
 // Africa's Talking setup (sandbox mode until real keys provided)
 const AfricasTalking = require('africastalking');
 const AT_USERNAME = process.env.AT_USERNAME || 'sandbox';

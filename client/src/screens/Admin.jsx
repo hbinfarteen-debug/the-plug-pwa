@@ -18,7 +18,7 @@ export default function Admin({ showToast }) {
   const [sanitizing, setSanitizing] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/admin/stats`)
+    fetch(`${API_BASE_URL}/api/admin/stats`, { headers: { 'x-admin-key': sessionStorage.getItem('admin_key') || '' } })
       .then(res => res.json())
       .then(data => setStats(data))
       .catch(console.error);
@@ -31,7 +31,7 @@ export default function Admin({ showToast }) {
   const fetchAllUsers = async () => {
     setLoadingUsers(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/users`);
+      const res = await fetch(`${API_BASE_URL}/api/admin/users`, { headers: { 'x-admin-key': sessionStorage.getItem('admin_key') || '' } });
       const data = await res.json();
       setAllUsers(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -44,7 +44,7 @@ export default function Admin({ showToast }) {
   const fetchWonBids = async () => {
     setLoadingBids(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/won-bids`);
+      const res = await fetch(`${API_BASE_URL}/api/admin/won-bids`, { headers: { 'x-admin-key': sessionStorage.getItem('admin_key') || '' } });
       const data = await res.json();
       setWonBids(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -57,7 +57,7 @@ export default function Admin({ showToast }) {
   const fetchPendingPayments = async () => {
     setLoadingPayments(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/pending-payments`);
+      const res = await fetch(`${API_BASE_URL}/api/admin/pending-payments`, { headers: { 'x-admin-key': sessionStorage.getItem('admin_key') || '' } });
       const data = await res.json();
       setPendingPayments(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -108,7 +108,7 @@ export default function Admin({ showToast }) {
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/${action}/${userId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': sessionStorage.getItem('admin_key') || '' },
         body: JSON.stringify({ reason: 'Admin intervention' })
       });
       if (res.ok) {
@@ -124,7 +124,8 @@ export default function Admin({ showToast }) {
   const handlePaymentAction = async (paymentId, action) => {
     try {
        const res = await fetch(`${API_BASE_URL}/api/admin/${action}-payment/${paymentId}`, {
-         method: 'POST'
+         method: 'POST',
+         headers: { 'x-admin-key': sessionStorage.getItem('admin_key') || '' }
        });
        if (res.ok) {
          showToast(`Payment ${action}ed!`, 'success');
@@ -135,6 +136,28 @@ export default function Admin({ showToast }) {
     } catch(e) {
       console.error(e);
       showToast('Error processing payment', 'error');
+    }
+  };
+
+  const handleSanitizeSuburbs = async () => {
+    if (!confirm('WARNING: This will delete listings outside Bulawayo and reset user locations to CBD. Proceed?')) return;
+    setSanitizing(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/sanitize-suburbs`, {
+        method: 'POST',
+        headers: { 'x-admin-key': sessionStorage.getItem('admin_key') || '' }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Sanitized! Deleted ${data.listingsDeleted} listings, updated ${data.usersUpdated} users.`, 'success');
+      } else {
+        showToast(data.error || 'Failed to sanitize', 'error');
+      }
+    } catch(e) {
+      console.error(e);
+      showToast('Error connecting', 'error');
+    } finally {
+      setSanitizing(false);
     }
   };
 
