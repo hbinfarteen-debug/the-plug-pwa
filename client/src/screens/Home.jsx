@@ -8,6 +8,15 @@ export default function Home({ showToast }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+
+  const ALL_SUBURBS = [
+    'Makokoba', 'Burnside', 'Cowdray Park', 'Nkulumane', 'Hillside', 
+    'Morningside', 'Bradfield', 'Queens Park', 'Magwegwe', 'Pumula', 
+    'Sizinda', 'Entumbane', 'Njube', 'Hyde Park', 'Selborne Park', 
+    'Kumalo', 'Suburbs', 'Malindela', 'Ilanda'
+  ];
 
   useEffect(() => {
     try {
@@ -62,10 +71,49 @@ export default function Home({ showToast }) {
     return bBoost - aBoost;
   });
 
-  // Filter based on user's homebase and selected type
+  // Filter based on user's unlocked areas and selected type
+  const getUnlockedList = () => {
+    if (!user) return [];
+    let list = [user.homebase];
+    try {
+      const extra = typeof user.unlockedSuburbs === 'string' ? JSON.parse(user.unlockedSuburbs || '[]') : (user.unlockedSuburbs || []);
+      list = [...list, ...extra];
+    } catch(e) {}
+    return [...new Set(list)];
+  };
+
+  const unlockedList = getUnlockedList();
+
   const filteredListings = sortedListings.filter(l => 
-    (!user || !user.homebase || l.suburb === user.homebase)
+    (!user || unlockedList.includes(l.suburb))
   );
+
+  const handleUnlock = async (suburb) => {
+    setUnlocking(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/${user.id}/unlock-suburb`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ suburb })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Welcome to ${suburb}! 📍`, 'success');
+        const updated = { ...user, unlockedSuburbs: JSON.stringify(data.unlockedSuburbs) };
+        localStorage.setItem('plug_user', JSON.stringify(updated));
+        setUser(updated);
+        setShowUnlockModal(false);
+      } else {
+        showToast(data.error || 'Failed to unlock', 'error');
+      }
+    } catch(e) {
+      showToast('Network error', 'error');
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
+  const hasUnusedUnlocks = user && unlockedList.length < (user.unlockedSuburbsLimit || 1);
 
   const items = filteredListings.filter(l => l.type === 'item');
   const gigs = filteredListings.filter(l => l.type === 'gig');
@@ -86,9 +134,20 @@ export default function Home({ showToast }) {
           <div className={`feed-tab ${filter==='gig'?'active':''}`} onClick={()=>setFilter('gig')}>Gigs</div>
         </div>
 
-        <div style={{padding:'10px 20px', backgroundColor:'var(--surface)', borderBottom:'1px solid var(--border)', fontSize:'12px', color:'var(--text-muted)'}}>
-           📍 Showing Plugs in <strong>{user?.homebase || 'your area'}</strong> 
-           {user?.ubuntupoints < 150 && <span style={{marginLeft:'5px'}}>(Get 150 pts to unlock more)</span>}
+        <div style={{padding:'10px 20px', backgroundColor:'var(--surface)', borderBottom:'1px solid var(--border)', fontSize:'12px', color:'var(--text-muted)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+           <div>
+             📍 Showing Plugs in <strong>{unlockedList.join(', ') || 'your area'}</strong> 
+             {user?.ubuntupoints < 150 && unlockedList.length === 1 && <span style={{marginLeft:'5px'}}>(Get 150 pts to unlock more)</span>}
+           </div>
+           {hasUnusedUnlocks && (
+             <button 
+               className="btn-sm" 
+               style={{background:'var(--amber)', color:'#000', border:'none', fontSize:'10px', fontWeight:700}}
+               onClick={() => setShowUnlockModal(true)}
+             >
+               🚀 UNLOCK NEW AREA
+             </button>
+           )}
         </div>
 
         {!(user?.phoneVerified || user?.phone_verified) && (
@@ -210,6 +269,48 @@ export default function Home({ showToast }) {
           </>
         )}
       </div>
+
+      {/* Unlock Suburb Modal */}
+      {showUnlockModal && (
+        <div style={{
+          position:'fixed', inset:0, background:'rgba(0,0,0,0.85)',
+          display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:'20px'
+        }}>
+          <div style={{
+            background:'var(--surface)', borderRadius:'24px',
+            padding:'24px', width:'100%', maxWidth:'400px',
+            boxShadow:'0 10px 40px rgba(0,0,0,0.5)', height:'80vh', overflow:'hidden', display:'flex', flexDirection:'column'
+          }}>
+            <div style={{textAlign:'center', marginBottom:'20px'}}>
+              <h3 style={{margin:0, fontFamily:'"Syne", sans-serif'}}>Choose Neighborhood</h3>
+              <p style={{fontSize:'12px', color:'var(--text-muted)'}}>You have {user.unlockedSuburbsLimit - unlockedList.length} unlock(s) available!</p>
+            </div>
+
+            <div style={{flex:1, overflowY:'auto', paddingRight:'10px'}}>
+              {ALL_SUBURBS.filter(s => !unlockedList.includes(s)).map(s => (
+                <div 
+                  key={s} 
+                  className="listing-card" 
+                  style={{padding:'15px', marginBottom:'10px', cursor:'pointer', textAlign:'center', fontWeight:700}}
+                  onClick={() => !unlocking && handleUnlock(s)}
+                >
+                  {s}
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowUnlockModal(false)}
+              style={{
+                width:'100%', background:'none', border:'none',
+                color:'var(--text-muted)', fontSize:'14px', cursor:'pointer', padding:'15px 0 0'
+              }}
+            >
+              Maybe later
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

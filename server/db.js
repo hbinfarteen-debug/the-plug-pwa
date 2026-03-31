@@ -35,6 +35,8 @@ function initSqlite() {
         role TEXT DEFAULT 'user',
         giftedtotal INTEGER DEFAULT 0,
         password TEXT,
+        unlockedsuburbs_limit INTEGER DEFAULT 1,
+        unlockedsuburbs TEXT DEFAULT '[]',
         createdat TEXT DEFAULT (datetime('now'))
       )`);
       sqliteDb.run(`CREATE TABLE IF NOT EXISTS listings (
@@ -152,6 +154,8 @@ if (USE_POSTGRES) {
           role TEXT DEFAULT 'user',
           giftedtotal INTEGER DEFAULT 0,
           password TEXT,
+          unlockedsuburbs_limit INTEGER DEFAULT 1,
+          unlockedsuburbs TEXT DEFAULT '[]',
           createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -258,6 +262,8 @@ if (USE_POSTGRES) {
         await client.query(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'boost'`);
         await client.query(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS proof_code TEXT`);
         await client.query(`ALTER TABLE payments ALTER COLUMN listing_id DROP NOT NULL`);
+        await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS unlockedsuburbs_limit INTEGER DEFAULT 1`);
+        await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS unlockedsuburbs TEXT DEFAULT '[]'`);
       } catch (e) {
         console.error('Migration notice:', e.message);
       }

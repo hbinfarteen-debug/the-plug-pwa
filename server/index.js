@@ -206,7 +206,10 @@ app.get('/api/auth/check-name/:name', async (req, res) => {
 app.get('/api/users/:id', async (req, res) => {
   try {
     const result = await db.query(
-      'SELECT id, fullname, fullname as "fullName", homebase, homebase as "homeBase", ubuntupoints, ubuntupoints as "ubuntuPoints", avatarurl as "avatarUrl", avatarurl as "avatarurl", phone_verified, phone_verified as "phoneVerified" FROM users WHERE id = $1',
+      `SELECT id, fullname, fullname as "fullName", homebase, homebase as "homeBase", ubuntupoints, ubuntupoints as "ubuntuPoints", 
+              avatarurl as "avatarUrl", avatarurl as "avatarurl", phone_verified, phone_verified as "phoneVerified",
+              unlockedsuburbs_limit as "unlockedSuburbsLimit", unlockedsuburbs as "unlockedSuburbs" 
+       FROM users WHERE id = $1`,
       [req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
@@ -565,6 +568,14 @@ app.post('/api/admin/approve-payment/:id', async (req, res) => {
        );
     }
     
+    // If it's a donation >= $5, reward with +2 neighborhood slots
+    if (payment.type === 'donation' && Number(payment.amount) >= 5) {
+       await db.query(
+         'UPDATE users SET unlockedsuburbs_limit = unlockedsuburbs_limit + 2 WHERE id = $1',
+         [payment.user_id]
+       );
+    }
+    
     res.json({ success: true, message: 'Payment approved and applied!' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -576,6 +587,33 @@ app.post('/api/admin/reject-payment/:id', async (req, res) => {
   try {
     await db.query('UPDATE payments SET status = $1 WHERE id = $2', ['rejected', req.params.id]);
     res.json({ success: true, message: 'Payment rejected' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==== Neighborhood Unlocks ====
+app.post('/api/users/:id/unlock-suburb', async (req, res) => {
+  const { id } = req.params;
+  const { suburb } = req.body;
+  try {
+    const user = await db.query('SELECT unlockedsuburbs, unlockedsuburbs_limit FROM users WHERE id = $1', [id]);
+    if (user.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    
+    let current = [];
+    try { current = JSON.parse(user.rows[0].unlockedsuburbs || '[]'); } catch(e) { current = []; }
+    
+    if (current.length >= user.rows[0].unlockedsuburbs_limit) {
+      return res.status(400).json({ error: 'You have reached your neighborhood limit.' });
+    }
+    
+    if (current.includes(suburb)) {
+      return res.status(400).json({ error: 'Neighborhood already unlocked.' });
+    }
+    
+    current.push(suburb);
+    await db.query('UPDATE users SET unlockedsuburbs = $1 WHERE id = $2', [JSON.stringify(current), id]);
+    res.json({ success: true, unlockedSuburbs: current });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
