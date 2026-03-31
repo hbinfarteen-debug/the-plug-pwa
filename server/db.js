@@ -107,9 +107,11 @@ function initSqlite() {
       sqliteDb.run(`CREATE TABLE IF NOT EXISTS payments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL REFERENCES users(id),
-        listing_id INTEGER NOT NULL REFERENCES listings(id),
+        listing_id INTEGER REFERENCES listings(id),
         amount REAL NOT NULL,
+        type TEXT DEFAULT 'boost',
         status TEXT DEFAULT 'pending',
+        proof_code TEXT,
         paynow_reference TEXT,
         poll_url TEXT,
         createdat TEXT DEFAULT (datetime('now'))
@@ -238,9 +240,11 @@ if (USE_POSTGRES) {
         CREATE TABLE IF NOT EXISTS payments (
           id SERIAL PRIMARY KEY,
           user_id INTEGER NOT NULL REFERENCES users(id),
-          listing_id INTEGER NOT NULL REFERENCES listings(id),
+          listing_id INTEGER REFERENCES listings(id),
           amount REAL NOT NULL,
+          type TEXT DEFAULT 'boost',
           status TEXT DEFAULT 'pending',
+          proof_code TEXT,
           paynow_reference TEXT,
           poll_url TEXT,
           createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -251,6 +255,9 @@ if (USE_POSTGRES) {
       try {
         await client.query(`ALTER TABLE listings ADD COLUMN IF NOT EXISTS is_boosted BOOLEAN DEFAULT false`);
         await client.query(`ALTER TABLE listings ADD COLUMN IF NOT EXISTS boost_expires_at TIMESTAMP`);
+        await client.query(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'boost'`);
+        await client.query(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS proof_code TEXT`);
+        await client.query(`ALTER TABLE payments ALTER COLUMN listing_id DROP NOT NULL`);
       } catch (e) {
         console.error('Migration notice:', e.message);
       }

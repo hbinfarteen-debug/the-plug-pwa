@@ -510,38 +510,75 @@ app.post('/api/payments/initiate-boost', async (req, res) => {
   }
 });
 
-app.post('/api/payments/update-status', async (req, res) => {
-  // Paynow sends webhook POSTs here when status changes
-  const data = req.body; 
-  console.log('Paynow Webhook Hit:', data);
+// ==== PAYMENTS (Manual Boosts & Donations) ====
+app.post('/api/payments/manual-submit', async (req, res) => {
+  const { userId, listingId, amount, proofCode, type } = req.body;
   
-  if (data && (data.status === 'Paid' || data.status === 'Awaiting Delivery')) {
-     const ref = data.pollurl; 
-     
-     try {
-       const payRes = await db.query('SELECT * FROM payments WHERE poll_url = $1', [ref]);
-       if (payRes.rows.length > 0) {
-          const payment = payRes.rows[0];
-          
-          if (payment.status !== 'paid') {
-            await db.query('UPDATE payments SET status = $1 WHERE id = $2', ['paid', payment.id]);
-            
-            // Activate the boost! 48 hours from now
-            // Need to convert to ISO string or just let DB handle datetime modifier if sqlite
-            const expStr = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
-            await db.query(
-              'UPDATE listings SET is_boosted = TRUE, boost_expires_at = $1 WHERE id = $2', 
-              [expStr, payment.listing_id]
-            );
-            console.log(`Boost Activated for Listing ${payment.listing_id}`);
-          }
-       }
-     } catch(e) {
-       console.error('Error handling Paynow webhook:', e);
-     }
+  if (!proofCode) return res.status(400).json({ error: 'Transaction ID (Ref Code) is required.' });
+
+  try {
+    await db.query(
+      'INSERT INTO payments (user_id, listing_id, amount, proof_code, type, status) VALUES ($1, $2, $3, $4, $5, $6)',
+      [userId, listingId || null, amount, proofCode, type || 'boost', 'pending']
+    );
+    res.json({ success: true, message: 'Payment submitted for verification. Barry will check soon!' });
+  } catch (err) {
+    console.error('Payment submit error:', err);
+    res.status(500).json({ error: err.message });
   }
-  // MUST return 200 OK so Paynow knows we received it
-  res.status(200).send('');
+});
+
+// Admin: View all pending verification payments
+app.get('/api/admin/pending-payments', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT payments.*, users.fullname as "userName", users.phone, listings.title as "listingTitle"
+      FROM payments
+      JOIN users ON payments.user_id = users.id
+      LEFT JOIN listings ON payments.listing_id = listings.id
+      WHERE payments.status = 'pending'
+      ORDER BY payments.createdat DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin: Approve a manual payment
+app.post('/api/admin/approve-payment/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const payRes = await db.query('SELECT * FROM payments WHERE id = $1', [id]);
+    if (payRes.rows.length === 0) return res.status(404).json({ error: 'Payment record not found' });
+    
+    const payment = payRes.rows[0];
+    
+    await db.query('UPDATE payments SET status = $1 WHERE id = $2', ['approved', id]);
+    
+    // If it's a boost, activate it
+    if (payment.type === 'boost' && payment.listing_id) {
+       const expStr = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+       await db.query(
+         'UPDATE listings SET is_boosted = TRUE, boost_expires_at = $1 WHERE id = $2',
+         [expStr, payment.listing_id]
+       );
+    }
+    
+    res.json({ success: true, message: 'Payment approved and applied!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin: Reject a manual payment
+app.post('/api/admin/reject-payment/:id', async (req, res) => {
+  try {
+    await db.query('UPDATE payments SET status = $1 WHERE id = $2', ['rejected', req.params.id]);
+    res.json({ success: true, message: 'Payment rejected' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.listen(PORT, () => {

@@ -14,6 +14,12 @@ export default function Settings({ showToast }) {
   const [verifying, setVerifying] = useState(false);
   const [deviceInfo, setDeviceInfo] = useState({ device: '', browser: '' });
 
+  // Donation state
+  const [showDonateModal, setShowDonateModal] = useState(false);
+  const [donateAmount, setDonateAmount] = useState('');
+  const [donateRef, setDonateRef] = useState('');
+  const [isDonating, setIsDonating] = useState(false);
+
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem('plug_user') || '{}');
     if (data.id) setUser(data);
@@ -100,6 +106,39 @@ export default function Settings({ showToast }) {
     }
   };
 
+  const submitDonation = async () => {
+    if (!donateAmount || isNaN(donateAmount)) return showToast('Enter a valid amount', 'error');
+    if (!donateRef || donateRef.length < 5) return showToast('Enter the EcoCash Ref Code', 'error');
+
+    setIsDonating(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/payments/manual-submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          amount: parseFloat(donateAmount),
+          proofCode: donateRef,
+          type: 'donation'
+        })
+      });
+
+      if (res.ok) {
+        showToast('Thank you for your Ubuntu spirit! Barry will verify soon. ❤️', 'success');
+        setShowDonateModal(false);
+        setDonateAmount('');
+        setDonateRef('');
+      } else {
+        showToast('Submission failed', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error submitting donation', 'error');
+    } finally {
+      setIsDonating(false);
+    }
+  };
+
   const isVerified = user?.phoneVerified || user?.phone_verified;
 
   return (
@@ -141,6 +180,11 @@ export default function Settings({ showToast }) {
         <div className="settings-item">
           <div className="settings-label">Mobile Number</div>
           <div className="settings-val">+{user?.phone || '2637xxxxxxxx'}</div>
+        </div>
+
+        <div className="settings-item" onClick={() => setShowDonateModal(true)} style={{background:'rgba(255, 235, 59, 0.05)', border:'1px solid rgba(255, 235, 59, 0.1)'}}>
+          <div className="settings-label" style={{color:'var(--amber)', fontWeight:700}}>❤️ Support The Plug</div>
+          <div className="settings-val" style={{color:'var(--amber)'}}>Donate via EcoCash</div>
         </div>
 
         <div className="settings-item" onClick={handleLogout}>
@@ -250,6 +294,76 @@ export default function Settings({ showToast }) {
 
             <button
               onClick={() => setShowVerifyModal(false)}
+              style={{
+                width:'100%', background:'none', border:'none',
+                color:'var(--text-muted)', fontSize:'14px', cursor:'pointer', padding:'8px'
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Donation Modal */}
+      {showDonateModal && (
+        <div style={{
+          position:'fixed', inset:0, background:'rgba(0,0,0,0.85)',
+          display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:1000
+        }}>
+          <div style={{
+            background:'var(--surface)', borderRadius:'24px 24px 0 0',
+            padding:'32px 24px 44px', width:'100%', maxWidth:'480px',
+            boxShadow:'0 -8px 40px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{textAlign:'center', marginBottom:'24px'}}>
+              <div style={{fontSize:'44px', marginBottom:'8px'}}>❤️</div>
+              <h3 style={{margin:'0 0 6px', fontSize:'20px', fontFamily:'"Syne", sans-serif'}}>Support The Plug</h3>
+              <p style={{fontSize:'13px', color:'var(--text-muted)', margin:0, lineHeight:1.6}}>
+                Your donations help us keep the servers running and the marketplace free for Bulawayo youth.
+              </p>
+            </div>
+
+            <div style={{
+              background:'rgba(255,184,0,0.1)', border:'1px solid rgba(255,184,0,0.2)',
+              borderRadius:'12px', padding:'12px', marginBottom:'20px', textAlign:'center'
+            }}>
+               <div style={{fontSize:'11px', color:'var(--amber)', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'4px'}}>SEND ECOCASH TO</div>
+               <div style={{fontSize:'16px', fontWeight:700}}>0775939688</div>
+               <div style={{fontSize:'13px'}}>Barry Changwa</div>
+            </div>
+
+            <div className="form-group" style={{marginBottom:'15px'}}>
+              <label style={{fontSize:'12px', color:'var(--text-muted)'}}>Amount ($ USD)</label>
+              <input 
+                className="field-input" 
+                placeholder="e.g. 1.00" 
+                type="number"
+                value={donateAmount}
+                onChange={(e) => setDonateAmount(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group" style={{marginBottom:'24px'}}>
+              <label style={{fontSize:'12px', color:'var(--text-muted)'}}>EcoCash Transaction ID (Ref Code)</label>
+              <input 
+                className="field-input" 
+                placeholder="e.g. PP230401.1234.H12345" 
+                value={donateRef}
+                onChange={(e) => setDonateRef(e.target.value)}
+              />
+            </div>
+
+            <button
+              className="btn-primary"
+              style={{width:'100%', justifyContent:'center', marginBottom:'12px'}}
+              onClick={submitDonation}
+              disabled={isDonating}
+            >
+              {isDonating ? 'Submitting...' : 'Submit Donation ❤️'}
+            </button>
+
+            <button
+              onClick={() => setShowDonateModal(false)}
               style={{
                 width:'100%', background:'none', border:'none',
                 color:'var(--text-muted)', fontSize:'14px', cursor:'pointer', padding:'8px'

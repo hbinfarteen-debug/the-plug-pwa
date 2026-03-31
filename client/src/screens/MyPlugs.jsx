@@ -12,8 +12,8 @@ export default function MyPlugs({ showToast, onSuccess }) {
   // Boost setup
   const [showBoostModal, setShowBoostModal] = useState(false);
   const [boostingPlug, setBoostingPlug] = useState(null);
-  const [boostPhone, setBoostPhone] = useState('');
-  const [isInitiating, setIsInitiating] = useState(false);
+  const [boostRef, setBoostRef] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const usr = JSON.parse(localStorage.getItem('plug_user') || '{}');
@@ -22,7 +22,7 @@ export default function MyPlugs({ showToast, onSuccess }) {
       return;
     }
     setUser(usr);
-    setBoostPhone(usr.phone || '');
+    setBoostRef('');
 
     fetch(`${API_BASE_URL}/api/users/${usr.id}/plugs`)
       .then(res => res.json())
@@ -41,34 +41,36 @@ export default function MyPlugs({ showToast, onSuccess }) {
       });
   }, []);
 
-  const initiateBoost = async () => {
-    if (!boostPhone || boostPhone.length < 8) return showToast('Enter a valid EcoCash/OneMoney number', 'error');
-    setIsInitiating(true);
+  const submitManualBoost = async () => {
+    if (!boostRef || boostRef.length < 5) return showToast('Enter a valid EcoCash Ref Code', 'error');
+    setIsSubmitting(true);
     
     try {
-       const res = await fetch(`${API_BASE_URL}/api/payments/initiate-boost`, {
+       const res = await fetch(`${API_BASE_URL}/api/payments/manual-submit`, {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({
            userId: user.id,
            listingId: boostingPlug.id,
-           phone: boostPhone,
-           amount: 0.30
+           amount: 0.30,
+           proofCode: boostRef,
+           type: 'boost'
          })
        });
        const data = await res.json();
        
        if (res.ok && data.success) {
-         showToast('Check your phone for the PIN prompt! 💸', 'success');
+         showToast('Code submitted! Barry will verify and boost you soon. 🚀', 'success');
          setShowBoostModal(false);
+         setBoostRef('');
        } else {
-         showToast(data.error || 'Failed to initiate payment.', 'error');
+         showToast(data.error || 'Failed to submit code.', 'error');
        }
     } catch(e) {
       console.error(e);
-      showToast('Network error while processing payment.', 'error');
+      showToast('Network error while submitting.', 'error');
     } finally {
-      setIsInitiating(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -155,27 +157,37 @@ export default function MyPlugs({ showToast, onSuccess }) {
               <div style={{fontSize:'44px', marginBottom:'8px'}}>🚀</div>
               <h3 style={{margin:'0 0 6px', fontSize:'20px', fontFamily:'"Syne", sans-serif'}}>Boost Your Plug</h3>
               <p style={{fontSize:'13px', color:'var(--text-muted)', margin:0, lineHeight:1.6}}>
-                Pin your listing to the very top of the feed for <strong>48 hours</strong>.<br/>Sell faster for only <strong>$0.30c</strong>.
+                1. Send <strong>$0.30</strong> to <strong>0775939688</strong> (Barry Changwa)<br/>
+                2. Enter the <strong>EcoCash Transaction ID</strong> below.
               </p>
             </div>
 
+            <div style={{
+              background:'rgba(255,184,0,0.1)', border:'1px solid rgba(255,184,0,0.2)',
+              borderRadius:'12px', padding:'12px', marginBottom:'20px', textAlign:'center'
+            }}>
+               <div style={{fontSize:'11px', color:'var(--amber)', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'4px'}}>ECOCASH DETAILS</div>
+               <div style={{fontSize:'16px', fontWeight:700}}>0775939688</div>
+               <div style={{fontSize:'13px'}}>Barry Changwa</div>
+            </div>
+
             <div className="form-group" style={{marginBottom:'24px'}}>
-              <label style={{fontSize:'12px', color:'var(--text-muted)'}}>EcoCash / OneMoney Number</label>
+              <label style={{fontSize:'12px', color:'var(--text-muted)'}}>EcoCash Transaction ID (Ref Code)</label>
               <input 
                 className="field-input" 
-                placeholder="077..." 
-                value={boostPhone}
-                onChange={(e) => setBoostPhone(e.target.value)}
+                placeholder="e.g. PP230401.1234.H12345" 
+                value={boostRef}
+                onChange={(e) => setBoostRef(e.target.value)}
               />
             </div>
 
             <button
               className="btn-primary"
               style={{width:'100%', justifyContent:'center', marginBottom:'12px'}}
-              onClick={initiateBoost}
-              disabled={isInitiating}
+              onClick={submitManualBoost}
+              disabled={isSubmitting}
             >
-              {isInitiating ? 'Processing...' : 'Pay $0.30 & Boost Now 🚀'}
+              {isSubmitting ? 'Submitting...' : 'I\'ve Sent $0.30 - Submit Code 🚀'}
             </button>
 
             <button

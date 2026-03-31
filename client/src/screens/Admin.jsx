@@ -8,13 +8,30 @@ export default function Admin({ showToast }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [pendingPayments, setPendingPayments] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/admin/stats`)
       .then(res => res.json())
       .then(data => setStats(data))
       .catch(console.error);
+
+    fetchPendingPayments();
   }, []);
+
+  const fetchPendingPayments = async () => {
+    setLoadingPayments(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/pending-payments`);
+      const data = await res.json();
+      setPendingPayments(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -67,6 +84,23 @@ export default function Admin({ showToast }) {
       }
     } catch (e) {
       showToast('Operation failed', 'error');
+    }
+  };
+
+  const handlePaymentAction = async (paymentId, action) => {
+    try {
+       const res = await fetch(`${API_BASE_URL}/api/admin/${action}-payment/${paymentId}`, {
+         method: 'POST'
+       });
+       if (res.ok) {
+         showToast(`Payment ${action}ed!`, 'success');
+         fetchPendingPayments();
+       } else {
+         showToast('Action failed', 'error');
+       }
+    } catch(e) {
+      console.error(e);
+      showToast('Error processing payment', 'error');
     }
   };
 
@@ -123,6 +157,50 @@ export default function Admin({ showToast }) {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="asec">
+          <h3>💰 Revenue & Boosts</h3>
+          <p style={{marginBottom:'15px'}}>Verify the EcoCash Code on your phone before hitting Approve.</p>
+          
+          {loadingPayments ? (
+            <div style={{padding:'20px', textAlign:'center'}}>Loading payments...</div>
+          ) : (
+            <div className="admin-results">
+              {pendingPayments.map(p => (
+                <div key={p.id} className="listing-card" style={{padding:'16px', display:'flex', flexDirection:'column', gap:'10px'}}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+                    <div>
+                       <div style={{fontWeight:700, fontSize:'15px'}}>{p.type.toUpperCase()} - ${Number(p.amount).toFixed(2)}</div>
+                       <div style={{fontSize:'12px', color:'var(--text-muted)'}}>User: {p.userName} (+{p.phone})</div>
+                       {p.listingTitle && <div style={{fontSize:'12px', color:'var(--amber)', marginTop:'2px'}}>Plug: {p.listingTitle}</div>}
+                    </div>
+                    <div style={{background:'rgba(255,184,0,0.1)', padding:'6px 12px', borderRadius:'10px', fontSize:'13px', fontWeight:700, color:'var(--amber)', fontFamily:'monospace'}}>
+                      {p.proof_code}
+                    </div>
+                  </div>
+                  
+                  <div style={{display:'flex', gap:'10px', marginTop:'5px'}}>
+                    <button 
+                      className="btn-primary" 
+                      style={{flex:1, background: 'var(--green)', color: '#000', border:'none', height:'38px', fontSize:'13px'}}
+                      onClick={() => handlePaymentAction(p.id, 'approve')}
+                    >
+                      Approve ✅
+                    </button>
+                    <button 
+                      className="btn-primary" 
+                      style={{flex:1, background: 'rgba(255,255,255,0.05)', color: 'var(--red)', border:'1px solid var(--red)', height:'38px', fontSize:'13px'}}
+                      onClick={() => handlePaymentAction(p.id, 'reject')}
+                    >
+                      Reject ❌
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {pendingPayments.length === 0 && <div style={{padding:'20px', textAlign:'center', color:'var(--text-muted)'}}>No pending payments to verify.</div>}
+            </div>
+          )}
         </div>
 
         <div className="asec">
