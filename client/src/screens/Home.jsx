@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/plug_logo.png';
+import logo from '../assets/logo.png';
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { ALL_SUBURBS } from '../utils/suburbs';
