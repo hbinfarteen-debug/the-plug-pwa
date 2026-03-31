@@ -150,6 +150,12 @@ export default function Detail({ showToast, t }) {
               {(() => {
                 const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
                 const isVerified = user.phoneVerified || user.phone_verified;
+                const isOwner = Number(user.id) === Number(listing.posterId);
+
+                if (isOwner) {
+                  return <button className="btn-primary" style={{padding:'12px 18px', background:'var(--surface2)', color:'var(--text-muted)', border:'1px solid var(--border)', cursor:'not-allowed'}} disabled>Your Plug</button>;
+                }
+
                 return isVerified ? (
                   <button className="btn-primary" style={{padding:'12px 18px'}} onClick={placeBid}>Bid</button>
                 ) : (

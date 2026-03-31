@@ -569,10 +569,10 @@ app.post('/api/admin/approve-payment/:id', async (req, res) => {
        );
     }
     
-    // If it's a donation >= $5, reward with +2 neighborhood slots
+    // If it's a donation >= $5, reward with +5 neighborhood slots
     if (payment.type === 'donation' && Number(payment.amount) >= 5) {
        await db.query(
-         'UPDATE users SET unlockedsuburbs_limit = unlockedsuburbs_limit + 2 WHERE id = $1',
+         'UPDATE users SET unlockedsuburbs_limit = unlockedsuburbs_limit + 5 WHERE id = $1',
          [payment.user_id]
        );
     }
@@ -588,6 +588,38 @@ app.post('/api/admin/reject-payment/:id', async (req, res) => {
   try {
     await db.query('UPDATE payments SET status = $1 WHERE id = $2', ['rejected', req.params.id]);
     res.json({ success: true, message: 'Payment rejected' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin: View all users
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const result = await db.query('SELECT id, fullname, phone, ubuntupoints, homebase, blacklisted FROM users ORDER BY createdat DESC');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin: View "Won Bids" (highest bids for active/ended listings)
+app.get('/api/admin/won-bids', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT l.id, l.title, l.price as "basePrice", 
+             u.fullname as "posterName", 
+             b.amount as "highestBid",
+             bidder.fullname as "winningBidder",
+             l.status
+      FROM listings l
+      JOIN users u ON l.posterid = u.id
+      JOIN bids b ON l.id = b.listingid
+      JOIN users bidder ON b.bidderid = bidder.id
+      WHERE b.amount = (SELECT MAX(amount) FROM bids WHERE listingid = l.id)
+      ORDER BY l.createdat DESC
+    `);
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

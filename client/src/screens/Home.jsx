@@ -94,12 +94,23 @@ export default function Home({ showToast, t }) {
   // Filter based on user's unlocked areas and selected type
   const getUnlockedList = () => {
     if (!user) return [];
-    let list = [user.homebase];
+    const isAdmin = user?.phone === '263715198745' || user?.phone === '+263715198745' || 
+                    user?.phone === '263775939688' || user?.phone === '+263775939688';
+
+    if (isAdmin) {
+      return ALL_SUBURBS;
+    }
+
     try {
-      const extra = typeof user.unlockedSuburbs === 'string' ? JSON.parse(user.unlockedSuburbs || '[]') : (user.unlockedSuburbs || []);
-      list = [...list, ...extra];
-    } catch(e) {}
-    return [...new Set(list)];
+      const list = typeof user?.unlockedSuburbs === 'string' 
+        ? JSON.parse(user.unlockedSuburbs) 
+        : (user?.unlockedSuburbs || []);
+      
+      const combined = Array.from(new Set([user?.homeBase || user?.homebase, ...list])).filter(Boolean);
+      return combined;
+    } catch(e) {
+      return [user?.homeBase || user?.homebase].filter(Boolean);
+    }
   };
 
   const unlockedList = getUnlockedList();
