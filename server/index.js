@@ -84,15 +84,15 @@ app.get('/api/listings', async (req, res) => {
   try {
     const result = await db.query(`
       SELECT listings.*, 
-             listings."posterId" as "posterId", 
-             listings."imageUrls" as "imageUrls", 
-             listings."is16PlusFriendly" as "is16PlusFriendly", 
-             listings."createdAt" as "createdAt",
+             listings.posterid as "posterId", 
+             listings.imageurls as "imageUrls", 
+             listings.is16plusfriendly as "is16PlusFriendly", 
+             listings.createdat as "createdAt",
              users.fullname, users.ubuntupoints, users.homebase 
       FROM listings 
-      JOIN users ON listings."posterId" = users.id 
+      JOIN users ON listings.posterid = users.id 
       WHERE status = 'active' 
-      ORDER BY listings."createdAt" DESC
+      ORDER BY listings.createdat DESC
     `);
     res.json(result.rows);
   } catch (err) {
@@ -104,13 +104,13 @@ app.get('/api/listings/:id', async (req, res) => {
   try {
     const listingRes = await db.query(`
       SELECT listings.*, 
-             listings."posterId" as "posterId", 
-             listings."imageUrls" as "imageUrls", 
-             listings."is16PlusFriendly" as "is16PlusFriendly", 
-             listings."createdAt" as "createdAt",
+             listings.posterid as "posterId", 
+             listings.imageurls as "imageUrls", 
+             listings.is16plusfriendly as "is16PlusFriendly", 
+             listings.createdat as "createdAt",
              users.fullname, users.ubuntupoints, users.homebase 
       FROM listings 
-      JOIN users ON listings."posterId" = users.id 
+      JOIN users ON listings.posterid = users.id 
       WHERE listings.id = $1
     `, [req.params.id]);
 
@@ -121,13 +121,13 @@ app.get('/api/listings/:id', async (req, res) => {
     // Get all bids
     const bidsRes = await db.query(`
       SELECT bids.*, 
-             bids."listingId" as "listingId", 
-             bids."bidderId" as "bidderId", 
-             bids."createdAt" as "createdAt",
+             bids.listingid as "listingId", 
+             bids.bidderid as "bidderId", 
+             bids.createdat as "createdAt",
              users.fullname, users.ubuntupoints 
       FROM bids 
-      JOIN users ON bids."bidderId" = users.id 
-      WHERE bids."listingId" = $1 
+      JOIN users ON bids.bidderid = users.id 
+      WHERE bids.listingid = $1 
       ORDER BY amount DESC
     `, [req.params.id]);
 
@@ -142,7 +142,7 @@ app.post('/api/listings', async (req, res) => {
   const { type, title, description, category, suburb, duration, price, is16PlusFriendly, posterId, imageUrls } = req.body;
   try {
     const result = await db.query(
-      'INSERT INTO listings (type, title, description, category, suburb, duration, price, "is16PlusFriendly", "posterId", "imageUrls") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id',
+      'INSERT INTO listings (type, title, description, category, suburb, duration, price, is16plusfriendly, posterid, imageurls) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id',
       [type, title, description, category, suburb, duration, price || null, is16PlusFriendly ? true : false, posterId, JSON.stringify(imageUrls || [])]
     );
     res.json({ id: result.rows[0].id, message: 'Listing created via The Plug' });
@@ -158,7 +158,7 @@ app.post('/api/listings/:id/bid', async (req, res) => {
   
   try {
     await db.query(
-      'INSERT INTO bids ("listingId", "bidderId", amount) VALUES ($1, $2, $3)',
+      'INSERT INTO bids (listingid, bidderid, amount) VALUES ($1, $2, $3)',
       [listingId, bidderId, amount]
     );
     
@@ -175,17 +175,17 @@ app.get('/api/users/:id/plugs', async (req, res) => {
   const userId = req.params.id;
   try {
     // Hustle: Listings I posted
-    const hustleRes = await db.query('SELECT * FROM listings WHERE "posterId" = $1', [userId]);
+    const hustleRes = await db.query('SELECT * FROM listings WHERE posterid = $1', [userId]);
     
     // Requests: Listings I bid on
     const requestsRes = await db.query(`
       SELECT listings.*, 
-             listings."posterId" as "posterId",
+             listings.posterid as "posterId",
              bids.amount as "myBid", 
              bids.status as "bidStatus" 
       FROM listings 
-      JOIN bids ON listings.id = bids."listingId" 
-      WHERE bids."bidderId" = $1
+      JOIN bids ON listings.id = bids.listingid 
+      WHERE bids.bidderid = $1
     `, [userId]);
 
     res.json({
@@ -203,20 +203,20 @@ app.get('/api/chats/:userId', async (req, res) => {
   try {
     const result = await db.query(`
       SELECT chats.*, 
-             chats."listingId" as "listingId",
-             chats."buyerId" as "buyerId",
-             chats."sellerId" as "sellerId",
-             chats."lastMsg" as "lastMsg",
-             chats."updatedAt" as "updatedAt",
+             chats.listingid as "listingId",
+             chats.buyerid as "buyerId",
+             chats.sellerid as "sellerId",
+             chats.lastmsg as "lastMsg",
+             chats.updatedat as "updatedAt",
              u1.fullname as "buyerName", 
              u2.fullname as "sellerName",
              l.title as "listingTitle"
       FROM chats
-      JOIN users u1 ON chats."buyerId" = u1.id
-      JOIN users u2 ON chats."sellerId" = u2.id
-      LEFT JOIN listings l ON chats."listingId" = l.id
-      WHERE "buyerId" = $1 OR "sellerId" = $1
-      ORDER BY chats."updatedAt" DESC
+      JOIN users u1 ON chats.buyerid = u1.id
+      JOIN users u2 ON chats.sellerid = u2.id
+      LEFT JOIN listings l ON chats.listingid = l.id
+      WHERE buyerid = $1 OR sellerid = $1
+      ORDER BY chats.updatedat DESC
     `, [userId]);
     res.json(result.rows);
   } catch (err) {
@@ -229,7 +229,7 @@ app.post('/api/chats', async (req, res) => {
   try {
     // Check if chat exists
     const existing = await db.query(
-      'SELECT id FROM chats WHERE "listingId" = $1 AND "buyerId" = $2 AND "sellerId" = $3',
+      'SELECT id FROM chats WHERE listingid = $1 AND buyerid = $2 AND sellerid = $3',
       [listingId, buyerId, sellerId]
     );
     
@@ -238,7 +238,7 @@ app.post('/api/chats', async (req, res) => {
     }
 
     const result = await db.query(
-      'INSERT INTO chats ("listingId", "buyerId", "sellerId") VALUES ($1, $2, $3) RETURNING id',
+      'INSERT INTO chats (listingid, buyerid, sellerid) VALUES ($1, $2, $3) RETURNING id',
       [listingId, buyerId, sellerId]
     );
     res.json(result.rows[0]);
@@ -251,12 +251,12 @@ app.get('/api/messages/:chatId', async (req, res) => {
   try {
     const result = await db.query(`
       SELECT messages.*, 
-             messages."chatId" as "chatId",
-             messages."senderId" as "senderId",
-             messages."createdAt" as "createdAt"
+             messages.chatid as "chatId",
+             messages.senderid as "senderId",
+             messages.createdat as "createdAt"
       FROM messages 
-      WHERE "chatId" = $1 
-      ORDER BY messages."createdAt" ASC
+      WHERE chatid = $1 
+      ORDER BY messages.createdat ASC
     `, [req.params.chatId]);
     res.json(result.rows);
   } catch (err) {
@@ -268,13 +268,13 @@ app.post('/api/messages', async (req, res) => {
   const { chatId, senderId, text } = req.body;
   try {
     const result = await db.query(
-      'INSERT INTO messages ("chatId", "senderId", text) VALUES ($1, $2, $3) RETURNING *',
+      'INSERT INTO messages (chatid, senderid, text) VALUES ($1, $2, $3) RETURNING *',
       [chatId, senderId, text]
     );
     
     // Update last message in chat
     await db.query(
-      'UPDATE chats SET "lastMsg" = $1, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $2',
+      'UPDATE chats SET lastmsg = $1, updatedat = CURRENT_TIMESTAMP WHERE id = $2',
       [text, chatId]
     );
     
