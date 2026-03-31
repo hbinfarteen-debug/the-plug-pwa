@@ -2,10 +2,20 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const db = require('./db');
+const { Paynow } = require('paynow');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Initialize Paynow
+const paynow = new Paynow(
+  process.env.PAYNOW_ID || '11776', 
+  process.env.PAYNOW_KEY || 'cb078e20-3eb6-4c7b-944d-5c6c2b186fc9'
+);
+// In a real production setup, resultUrl should be a fully qualified domain e.g. https://your-render-app.com/api/payments/update-status
+paynow.resultUrl = process.env.PAYNOW_RESULT_URL || 'http://localhost:3001/api/payments/update-status';
+paynow.returnUrl = process.env.PAYNOW_RETURN_URL || 'http://localhost:5173/home';
 
 app.use(cors());
 app.use(express.json());
@@ -466,6 +476,73 @@ app.post('/api/admin/unblacklist/:id', async (req, res) => {
   }
 });
 
+// ==== PAYMENTS (Boosted Plugs via Paynow) ====
+app.post('/api/payments/initiate-boost', async (req, res) => {
+  const { userId, listingId, phone, amount } = req.body;
+  
+  if (!phone) return res.status(400).json({ error: 'Phone number required (EcoCash/OneMoney)' });
+
+  // Use a unique reference for the transaction
+  const invoice = `Boost_Plug_${listingId}_${Date.now()}`;
+  const payment = paynow.createPayment(invoice, "admin@theplug.co.zw");
+  payment.add("Listing Boost (48hrs)", amount || 0.30);
+  
+  try {
+    // Determine method based on prefix (rough assumption for ZW: 077/078 is eco, 071 is one)
+    const method = (phone.includes('071') || phone.includes('71')) ? 'onemoney' : 'ecocash';
+    
+    // Initiate mobile transaction
+    const response = await paynow.sendMobile(payment, phone, method);
+    
+    if (response.success) {
+      // Create a pending payment record
+      await db.query(
+        'INSERT INTO payments (user_id, listing_id, amount, paynow_reference, poll_url, status) VALUES ($1, $2, $3, $4, $5, $6)',
+        [userId, listingId, amount || 0.30, response.pollUrl, response.pollUrl, 'pending']
+      );
+      res.json({ success: true, pollUrl: response.pollUrl, instructions: response.instructions });
+    } else {
+      res.status(400).json({ error: response.error || 'Failed to initiate payment with Paynow.' });
+    }
+  } catch (err) {
+    console.error('Paynow Error:', err);
+    res.status(500).json({ error: 'Payment gateway error: ' + err.message });
+  }
+});
+
+app.post('/api/payments/update-status', async (req, res) => {
+  // Paynow sends webhook POSTs here when status changes
+  const data = req.body; 
+  console.log('Paynow Webhook Hit:', data);
+  
+  if (data && (data.status === 'Paid' || data.status === 'Awaiting Delivery')) {
+     const ref = data.pollurl; 
+     
+     try {
+       const payRes = await db.query('SELECT * FROM payments WHERE poll_url = $1', [ref]);
+       if (payRes.rows.length > 0) {
+          const payment = payRes.rows[0];
+          
+          if (payment.status !== 'paid') {
+            await db.query('UPDATE payments SET status = $1 WHERE id = $2', ['paid', payment.id]);
+            
+            // Activate the boost! 48 hours from now
+            // Need to convert to ISO string or just let DB handle datetime modifier if sqlite
+            const expStr = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+            await db.query(
+              'UPDATE listings SET is_boosted = TRUE, boost_expires_at = $1 WHERE id = $2', 
+              [expStr, payment.listing_id]
+            );
+            console.log(`Boost Activated for Listing ${payment.listing_id}`);
+          }
+       }
+     } catch(e) {
+       console.error('Error handling Paynow webhook:', e);
+     }
+  }
+  // MUST return 200 OK so Paynow knows we received it
+  res.status(200).send('');
+});
 
 app.listen(PORT, () => {
   console.log(`The Plug Backend running on port ${PORT}`);

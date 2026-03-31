@@ -7,15 +7,24 @@ export default function MyPlugs({ showToast, onSuccess }) {
   const [tab, setTab] = useState('req');
   const [plugs, setPlugs] = useState({ requests: [], hustle: [] });
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
+  // Boost setup
+  const [showBoostModal, setShowBoostModal] = useState(false);
+  const [boostingPlug, setBoostingPlug] = useState(null);
+  const [boostPhone, setBoostPhone] = useState('');
+  const [isInitiating, setIsInitiating] = useState(false);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
-    if (!user.id) {
+    const usr = JSON.parse(localStorage.getItem('plug_user') || '{}');
+    if (!usr.id) {
       setLoading(false);
       return;
     }
+    setUser(usr);
+    setBoostPhone(usr.phone || '');
 
-    fetch(`${API_BASE_URL}/api/users/${user.id}/plugs`)
+    fetch(`${API_BASE_URL}/api/users/${usr.id}/plugs`)
       .then(res => res.json())
       .then(data => {
         if (data && !data.error) {
@@ -31,6 +40,37 @@ export default function MyPlugs({ showToast, onSuccess }) {
         setLoading(false);
       });
   }, []);
+
+  const initiateBoost = async () => {
+    if (!boostPhone || boostPhone.length < 8) return showToast('Enter a valid EcoCash/OneMoney number', 'error');
+    setIsInitiating(true);
+    
+    try {
+       const res = await fetch(`${API_BASE_URL}/api/payments/initiate-boost`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           userId: user.id,
+           listingId: boostingPlug.id,
+           phone: boostPhone,
+           amount: 0.30
+         })
+       });
+       const data = await res.json();
+       
+       if (res.ok && data.success) {
+         showToast('Check your phone for the PIN prompt! 💸', 'success');
+         setShowBoostModal(false);
+       } else {
+         showToast(data.error || 'Failed to initiate payment.', 'error');
+       }
+    } catch(e) {
+      console.error(e);
+      showToast('Network error while processing payment.', 'error');
+    } finally {
+      setIsInitiating(false);
+    }
+  };
 
   if (loading) return <div className="screen active"><div style={{padding:'20px',textAlign:'center'}}>Loading your plugs...</div></div>;
 
@@ -71,21 +111,86 @@ export default function MyPlugs({ showToast, onSuccess }) {
 
         {tab === 'hus' && (
           <div className="plugs-panel active">
-            {plugs?.hustle?.length > 0 ? plugs.hustle.map(h => (
-              <div key={h.id} className="plug-item">
-                <div className="plug-item-header">
-                  <div><div className="plug-item-title">{h.title}</div><div style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'3px'}}>📍 {h.suburb} · Status: {h.status}</div></div>
-                  <div className={`pstatus ${h.status === 'active' ? 's-active' : 's-pending'}`}>{h.status.toUpperCase()}</div>
+            {plugs?.hustle?.length > 0 ? plugs.hustle.map(h => {
+              const boosted = h.is_boosted || h.isBoosted;
+              return (
+                <div key={h.id} className="plug-item" style={boosted ? {borderColor:'var(--green)', boxShadow:'0 0 10px rgba(0,232,122,0.1)'} : {}}>
+                  <div className="plug-item-header">
+                    <div>
+                      <div className="plug-item-title">{h.title} {boosted && <span style={{fontSize:'12px', color:'var(--green)'}}>🚀 BOOSTED</span>}</div>
+                      <div style={{fontSize:'12px',color:'var(--text-muted)',marginTop:'3px'}}>📍 {h.suburb} · Status: {h.status}</div>
+                    </div>
+                    <div className={`pstatus ${h.status === 'active' ? 's-active' : 's-pending'}`}>{h.status.toUpperCase()}</div>
+                  </div>
+                  <div className="plug-acts" style={{marginTop:'10px'}}>
+                     <button className="btn-sm s" onClick={()=>navigate(`/detail/${h.id}`)}>Manage</button>
+                     {!boosted && (
+                       <button className="btn-sm p" style={{background:'rgba(255,184,0,0.15)', color:'var(--amber)', border:'1px solid rgba(255,184,0,0.3)'}} onClick={() => {
+                         setBoostingPlug(h);
+                         setShowBoostModal(true);
+                       }}>
+                         🚀 Boost ($0.30)
+                       </button>
+                     )}
+                  </div>
                 </div>
-                <div className="plug-acts" style={{marginTop:'10px'}}>
-                   <button className="btn-sm s" onClick={()=>navigate(`/detail/${h.id}`)}>Manage Bids</button>
-                </div>
-              </div>
-            )) : <div style={{padding:'20px', textAlign:'center', color:'var(--text-muted)'}}>Nothing to hustle yet. Plug something!</div>}
+              );
+            }) : <div style={{padding:'20px', textAlign:'center', color:'var(--text-muted)'}}>Nothing to hustle yet. Plug something!</div>}
           </div>
         )}
 
       </div>
+
+      {showBoostModal && (
+        <div style={{
+          position:'fixed', inset:0, background:'rgba(0,0,0,0.85)',
+          display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:1000
+        }}>
+          <div style={{
+            background:'var(--surface)', borderRadius:'24px 24px 0 0',
+            padding:'32px 24px 44px', width:'100%', maxWidth:'480px',
+            boxShadow:'0 -8px 40px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{textAlign:'center', marginBottom:'24px'}}>
+              <div style={{fontSize:'44px', marginBottom:'8px'}}>🚀</div>
+              <h3 style={{margin:'0 0 6px', fontSize:'20px', fontFamily:'"Syne", sans-serif'}}>Boost Your Plug</h3>
+              <p style={{fontSize:'13px', color:'var(--text-muted)', margin:0, lineHeight:1.6}}>
+                Pin your listing to the very top of the feed for <strong>48 hours</strong>.<br/>Sell faster for only <strong>$0.30c</strong>.
+              </p>
+            </div>
+
+            <div className="form-group" style={{marginBottom:'24px'}}>
+              <label style={{fontSize:'12px', color:'var(--text-muted)'}}>EcoCash / OneMoney Number</label>
+              <input 
+                className="field-input" 
+                placeholder="077..." 
+                value={boostPhone}
+                onChange={(e) => setBoostPhone(e.target.value)}
+              />
+            </div>
+
+            <button
+              className="btn-primary"
+              style={{width:'100%', justifyContent:'center', marginBottom:'12px'}}
+              onClick={initiateBoost}
+              disabled={isInitiating}
+            >
+              {isInitiating ? 'Processing...' : 'Pay $0.30 & Boost Now 🚀'}
+            </button>
+
+            <button
+              onClick={() => setShowBoostModal(false)}
+              style={{
+                width:'100%', background:'none', border:'none',
+                color:'var(--text-muted)', fontSize:'14px', cursor:'pointer', padding:'8px'
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

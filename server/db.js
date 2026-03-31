@@ -47,6 +47,8 @@ function initSqlite() {
         duration INTEGER NOT NULL,
         price REAL,
         is16plusfriendly INTEGER DEFAULT 0,
+        is_boosted INTEGER DEFAULT 0,
+        boost_expires_at TEXT,
         posterid INTEGER NOT NULL,
         imageurls TEXT,
         status TEXT DEFAULT 'active',
@@ -102,6 +104,16 @@ function initSqlite() {
         text TEXT NOT NULL,
         createdat TEXT DEFAULT (datetime('now'))
       )`);
+      sqliteDb.run(`CREATE TABLE IF NOT EXISTS payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        listing_id INTEGER NOT NULL REFERENCES listings(id),
+        amount REAL NOT NULL,
+        status TEXT DEFAULT 'pending',
+        paynow_reference TEXT,
+        poll_url TEXT,
+        createdat TEXT DEFAULT (datetime('now'))
+      )`);
       console.log('SQLite Schema Initialized');
     });
     return sqliteDb;
@@ -152,6 +164,8 @@ if (USE_POSTGRES) {
           duration INTEGER NOT NULL,
           price REAL,
           is16plusfriendly BOOLEAN DEFAULT false,
+          is_boosted BOOLEAN DEFAULT false,
+          boost_expires_at TIMESTAMP,
           posterid INTEGER NOT NULL REFERENCES users(id),
           imageurls TEXT,
           status TEXT DEFAULT 'active',
@@ -220,6 +234,27 @@ if (USE_POSTGRES) {
           createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS payments (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          listing_id INTEGER NOT NULL REFERENCES listings(id),
+          amount REAL NOT NULL,
+          status TEXT DEFAULT 'pending',
+          paynow_reference TEXT,
+          poll_url TEXT,
+          createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      // Migrations for existing deployments
+      try {
+        await client.query(`ALTER TABLE listings ADD COLUMN IF NOT EXISTS is_boosted BOOLEAN DEFAULT false`);
+        await client.query(`ALTER TABLE listings ADD COLUMN IF NOT EXISTS boost_expires_at TIMESTAMP`);
+      } catch (e) {
+        console.error('Migration notice:', e.message);
+      }
+      
       console.log('Postgres Schema Initialized (Lowercase)');
     } catch (err) {
       console.error('Schema initialization failed:', err);

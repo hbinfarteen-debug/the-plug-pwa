@@ -55,8 +55,15 @@ export default function Home({ showToast }) {
     }
   }, [navigate]);
 
+  // Sort so boosted items are always at the top
+  const sortedListings = [...listings].sort((a, b) => {
+    const aBoost = (a.is_boosted === true || a.is_boosted === 1) ? 1 : 0;
+    const bBoost = (b.is_boosted === true || b.is_boosted === 1) ? 1 : 0;
+    return bBoost - aBoost;
+  });
+
   // Filter based on user's homebase and selected type
-  const filteredListings = listings.filter(l => 
+  const filteredListings = sortedListings.filter(l => 
     (!user || !user.homebase || l.suburb === user.homebase)
   );
 
@@ -116,9 +123,12 @@ export default function Home({ showToast }) {
                   <div className="see-all">See all</div>
                 </div>
                 <div className="urgency-rail">
-                  {filteredListings.slice(0, 4).map(l => (
-                    <div key={l.id} className="urgency-card" onClick={()=>navigate(`/detail/${l.id}`)}>
-                      <div className="urgency-img" style={{padding:0, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                  {filteredListings.slice(0, 4).map(l => {
+                    const boosted = l.is_boosted || l.isBoosted;
+                    return (
+                    <div key={l.id} className="urgency-card" style={boosted ? {borderColor:'var(--green)', boxShadow:'0 0 12px rgba(0,232,122,0.15)'} : {}} onClick={()=>navigate(`/detail/${l.id}`)}>
+                      <div className="urgency-img" style={{padding:0, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', position:'relative'}}>
+                        {boosted && <div style={{position:'absolute', top:4, left:4, background:'var(--green)', color:'#fff', padding:'2px 6px', fontSize:'10px', borderRadius:'10px', fontWeight:'bold', zIndex:10}}>🚀 BOOSTED</div>}
                         {l.imageUrls && l.imageUrls !== '[]' ? (
                           <img 
                             src={(() => {
@@ -137,7 +147,7 @@ export default function Home({ showToast }) {
                       </div>
                       <div className="urgency-info"><h5>{l.title}</h5><div className="urgency-bid">${l.price || 'Blind'}</div></div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </>
             )}
@@ -145,9 +155,12 @@ export default function Home({ showToast }) {
             {(filter === 'all' || filter === 'item') && (
               <>
                 <div className="section-header"><div className="section-title">🛒 Items</div><div className="see-all">Filter</div></div>
-                {items.length > 0 ? items.map(l => (
-                  <div key={l.id} className="listing-card" onClick={()=>navigate(`/detail/${l.id}`)}>
-                    <div className="listing-thumb" style={{padding:0, overflow:'hidden'}}>
+                {items.length > 0 ? items.map(l => {
+                  const boosted = l.is_boosted || l.isBoosted;
+                  return (
+                  <div key={l.id} className="listing-card" style={boosted ? {borderColor:'var(--green)'} : {}} onClick={()=>navigate(`/detail/${l.id}`)}>
+                    <div className="listing-thumb" style={{padding:0, overflow:'hidden', position:'relative'}}>
+                      {boosted && <div style={{position:'absolute', top:4, left:4, background:'var(--green)', color:'#fff', padding:'2px 6px', fontSize:'10px', borderRadius:'10px', fontWeight:'bold', zIndex:10}}>🚀</div>}
                       {l.imageUrls && l.imageUrls !== '[]' ? (
                         <img 
                           src={(() => {
@@ -170,18 +183,20 @@ export default function Home({ showToast }) {
                       <div className="ubuntu-chip"><div className="dot dot-g"></div> {l.ubuntupoints} pts · {l.fullname}</div>
                     </div>
                   </div>
-                )) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>No items listed in {user?.homebase} yet.</p>}
+                )}) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>No items listed in {user?.homebase} yet.</p>}
               </>
             )}
 
             {(filter === 'all' || filter === 'gig') && (
               <>
                 <div className="section-header"><div className="section-title">💼 Local Gigs</div><div className="see-all">Filter</div></div>
-                {gigs.length > 0 ? gigs.map(l => (
-                  <div key={l.id} className="gig-card" onClick={()=>navigate(`/detail/${l.id}`)}>
+                {gigs.length > 0 ? gigs.map(l => {
+                  const boosted = l.is_boosted || l.isBoosted;
+                  return (
+                  <div key={l.id} className="gig-card" style={boosted ? {borderColor:'var(--green)'} : {}} onClick={()=>navigate(`/detail/${l.id}`)}>
                     <div className="gig-header">
-                      <div className="gig-icon youth">{l.category === 'Gardening' ? '🌿' : '💼'}</div>
-                      <div className="gig-info"><h4>{l.title}</h4><p>{l.description}</p></div>
+                      <div className="gig-icon youth" style={boosted ? {background:'var(--green)', color:'#fff'} : {}}>{boosted ? '🚀' : (l.category === 'Gardening' ? '🌿' : '💼')}</div>
+                      <div className="gig-info"><h4>{l.title} {boosted && <span style={{fontSize:'12px',color:'var(--green)'}}>BOOSTED</span>}</h4><p>{l.description}</p></div>
                     </div>
                     <div className="gig-meta">
                       <span className="gig-stat">💰 <strong>{l.bidCount || 0} bids</strong></span>
@@ -189,7 +204,7 @@ export default function Home({ showToast }) {
                     </div>
                     {l.is16PlusFriendly && <div style={{marginTop:'9px'}}><span className="youth-tag">✅ 16+ Friendly</span></div>}
                   </div>
-                )) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>No gigs available in {user?.homebase}.</p>}
+                )}) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>No gigs available in {user?.homebase}.</p>}
               </>
             )}
           </>
