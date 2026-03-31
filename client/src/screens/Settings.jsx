@@ -140,6 +140,8 @@ export default function Settings({ showToast, t, language, setLanguage }) {
   };
 
   const isVerified = user?.phoneVerified || user?.phone_verified;
+  const isAdmin = user?.phone === '263715198745' || user?.phone === '+263715198745' || 
+                  user?.phone === '263775939688' || user?.phone === '+263775939688';
 
   return (
     <div className="screen active">
@@ -221,18 +223,22 @@ export default function Settings({ showToast, t, language, setLanguage }) {
           </div>
         </div>
 
-        <div className="section-header"><div className="section-title">🛡️ OWNER TOOLS</div></div>
-        <div className="settings-item" onClick={() => {
-          const pw = prompt('Enter Admin Password:');
-          if (pw === '259047changwaMAFIA!') {
-            navigate('/admin');
-          } else {
-            showToast('Wrong password!', 'error');
-          }
-        }}>
-          <div className="settings-label" style={{color:'var(--amber)', fontWeight:700}}>{t.commanderView}</div>
-          <div className="settings-val" style={{color:'var(--amber)'}}>{t.adminWarning.split('—')[0]} →</div>
-        </div>
+        {isAdmin && (
+          <>
+            <div className="section-header"><div className="section-title">🛡️ OWNER TOOLS</div></div>
+            <div className="settings-item" onClick={() => {
+              const pw = prompt('Enter Admin Password:');
+              if (pw === '259047changwaMAFIA!') {
+                navigate('/admin');
+              } else {
+                showToast('Wrong password!', 'error');
+              }
+            }}>
+              <div className="settings-label" style={{color:'var(--amber)', fontWeight:700}}>{t.commanderView}</div>
+              <div className="settings-val" style={{color:'var(--amber)'}}>{t.adminWarning.split('—')[0]} →</div>
+            </div>
+          </>
+        )}
 
         <div className="section-header"><div className="section-title">💡 HOW IT WORKS</div></div>
         <div className="how-section">

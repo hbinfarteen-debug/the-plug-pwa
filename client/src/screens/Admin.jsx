@@ -177,7 +177,7 @@ export default function Admin({ showToast }) {
             <div className="admin-stat-grid">
               <div className="admin-stat"><div className="num g">{stats.activeItems}</div><div className="lbl">Active Items</div></div>
               <div className="admin-stat"><div className="num a">{stats.openDisputes}</div><div className="lbl">Open Disputes</div></div>
-              <div className="admin-stat" style={{border:'1px solid var(--green)', boxShadow:'inset 0 0 10px rgba(0,232,122,0.1)'}}><div className="num g">${(stats.totalRevenue || 0).toFixed(2)}</div><div className="lbl">Total Earnings</div></div>
+              <div className="admin-stat" style={{border:'1px solid var(--green)', boxShadow:'inset 0 0 10px rgba(0,232,122,0.1)'}}><div className="num g">${Number(stats.totalRevenue || 0).toFixed(2)}</div><div className="lbl">Total Earnings</div></div>
             </div>
 
             <div className="asec" style={{border:'1px solid rgba(255,107,107,0.2)', background:'rgba(255,107,107,0.05)'}}>

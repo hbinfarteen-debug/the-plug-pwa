@@ -85,7 +85,7 @@ export default function MyPlugs({ showToast, t, onSuccess }) {
       <div className="scroll-area">
         <div className="plugs-tabs">
           <div className={`plugs-tab ${tab==='req'?'active':''}`} onClick={()=>setTab('req')}>📥 {t.myPlugs} </div>
-          <div className={`plugs-tab ${tab==='hus'?'active':''}`} onClick={()=>setTab('hus')}>💪 {t.stats} </div>
+          <div className={`plugs-tab ${tab==='hus'?'active':''}`} onClick={()=>setTab('hus')}>💪 Hustle </div>
         </div>
 
         {tab === 'req' && (

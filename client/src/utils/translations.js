@@ -58,7 +58,7 @@ export const translations = {
     // Profile
     ubuntuScore: "Ubuntu Score",
     unlockedNeighborhoods: "Unlocked Neighborhoods",
-    stats: "Stats"
+    stats: "Hustle"
   },
   IsiNdebele: {
     home: "Ekhaya",
@@ -113,7 +113,7 @@ export const translations = {
 
     ubuntuScore: "Ubuntu Score",
     unlockedNeighborhoods: "Izindawo Ezivuliweyo",
-    stats: "Umniningwane"
+    stats: "Hustle"
   },
   ChiShona: {
     home: "Kumba",
@@ -168,6 +168,6 @@ export const translations = {
 
     ubuntuScore: "Ubuntu Score",
     unlockedNeighborhoods: "Nzvimbo Dzakavhurwa",
-    stats: "Zviverengo"
+    stats: "Hustle"
   }
 };
