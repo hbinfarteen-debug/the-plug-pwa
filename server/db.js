@@ -54,8 +54,15 @@ function initSqlite() {
         posterid INTEGER NOT NULL,
         imageurls TEXT,
         status TEXT DEFAULT 'active',
+        suburbs TEXT DEFAULT '[]',
         createdat TEXT DEFAULT (datetime('now'))
       )`);
+
+      // Migration: Add suburbs if not exists (SQLite)
+      sqliteDb.run(`ALTER TABLE listings ADD COLUMN suburbs TEXT DEFAULT '[]'`, (err) => {
+        // Ignore error if column exists
+      });
+
       sqliteDb.run(`CREATE TABLE IF NOT EXISTS bids (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         listingid INTEGER NOT NULL,
@@ -175,9 +182,21 @@ if (USE_POSTGRES) {
           posterid INTEGER NOT NULL REFERENCES users(id),
           imageurls TEXT,
           status TEXT DEFAULT 'active',
+          suburbs TEXT DEFAULT '[]',
           createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+
+      // Migration: Add suburbs if not exists (Postgres)
+      await pgPool.query(`
+        DO $$ 
+        BEGIN 
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='listings' AND column_name='suburbs') THEN
+            ALTER TABLE listings ADD COLUMN suburbs TEXT DEFAULT '[]';
+          END IF;
+        END $$;
+      `);
+
       await client.query(`
         CREATE TABLE IF NOT EXISTS bids (
           id SERIAL PRIMARY KEY,

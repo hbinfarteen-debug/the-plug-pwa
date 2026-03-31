@@ -13,13 +13,35 @@ export default function PostListing({ showToast }) {
   const [category, setCategory] = useState('Tech & Electronics');
   const [price, setPrice] = useState('1.00');
   const [is16PlusFriendly, setIs16PlusFriendly] = useState(false);
-  const [selectedSuburb, setSelectedSuburb] = useState(JSON.parse(localStorage.getItem('plug_user') || '{}').homeBase || JSON.parse(localStorage.getItem('plug_user') || '{}').homebase);
+  const [selectedSuburbs, setSelectedSuburbs] = useState([JSON.parse(localStorage.getItem('plug_user') || '{}').homeBase || JSON.parse(localStorage.getItem('plug_user') || '{}').homebase]);
   const [duration, setDuration] = useState(24);
   const [loading, setLoading] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
   const [images, setImages] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+
+  const toggleSuburb = (loc) => {
+    const u = JSON.parse(localStorage.getItem('plug_user') || '{}');
+    const home = u.homeBase || u.homebase;
+    const isAdmin = u.phone === '263715198745' || u.phone === '+263715198745' || 
+                    u.phone === '263775939688' || u.phone === '+263775939688';
+    
+    const unlocked = typeof u.unlockedSuburbs === 'string' ? JSON.parse(u.unlockedSuburbs || '[]') : (u.unlockedSuburbs || []);
+    const totalSlots = 1 + unlocked.length;
+    const limit = isAdmin ? 500 : totalSlots;
+
+    if (selectedSuburbs.includes(loc)) {
+      if (selectedSuburbs.length === 1 && loc === home) return; // Must have at least 1
+      setSelectedSuburbs(selectedSuburbs.filter(s => s !== loc));
+    } else {
+      if (selectedSuburbs.length < limit) {
+        setSelectedSuburbs([...selectedSuburbs, loc]);
+      } else {
+        showToast(`Limit reached (${totalSlots} slots). Unlock more neighborhoods to select more.`, 'error');
+      }
+    }
+  };
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files).slice(0, 3);
@@ -51,21 +73,23 @@ export default function PostListing({ showToast }) {
     }
 
     try {
+      const body = {
+        type,
+        title,
+        description,
+        category,
+        suburb: selectedSuburbs[0] || 'CBD',
+        suburbs: selectedSuburbs,
+        duration,
+        price: type === 'item' ? parseFloat(price) : null,
+        is16PlusFriendly: is16PlusFriendly ? 1 : 0,
+        posterId: user.id,
+        imageUrls
+      };
       const res = await fetch(`${API_BASE_URL}/api/listings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type,
-          title,
-          description,
-          category,
-          suburb: selectedSuburb,
-          duration,
-          price: type === 'item' ? parseFloat(price) : null,
-          is16PlusFriendly,
-          posterId: user.id,
-          imageUrls
-        })
+        body: JSON.stringify(body)
       });
       if (res.ok) {
         showToast('Your Plug is LIVE! 🚀', 'success');
@@ -131,7 +155,10 @@ export default function PostListing({ showToast }) {
           </div>
           
           <div className="form-group">
-            <label className="form-label">LISTING LOCATION ({selectedSuburb || 'Required'})</label>
+            <label className="form-label" style={{display:'flex', justifyContent:'space-between'}}>
+              <span>LISTING LOCATION</span>
+              <span style={{fontSize:'10px', color:'var(--amber)'}}>{selectedSuburbs.length} selected</span>
+            </label>
             <input 
               className="field-input" 
               placeholder="Search neighborhoods..." 
@@ -162,9 +189,12 @@ export default function PostListing({ showToast }) {
               })().map(loc => {
                 const u = JSON.parse(localStorage.getItem('plug_user') || '{}');
                 const home = u.homeBase || u.homebase;
+                const isSel = selectedSuburbs.includes(loc);
                 return (
-                  <div key={loc} className={`dur-card ${selectedSuburb===loc?'sel':''}`} onClick={()=>setSelectedSuburb(loc)} style={{marginBottom:'0'}}>
-                    <div className="h" style={{fontSize:'12px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{loc}</div>
+                  <div key={loc} className={`dur-card ${isSel?'sel':''}`} onClick={()=>toggleSuburb(loc)} style={{marginBottom:'0'}}>
+                    <div className="h" style={{fontSize:'12px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                      {isSel && '✓ '} {loc}
+                    </div>
                     <div className="hl">{loc === home ? 'Home Base' : 'Unlocked'}</div>
                   </div>
                 );

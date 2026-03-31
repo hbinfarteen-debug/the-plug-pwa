@@ -115,9 +115,18 @@ export default function Home({ showToast, t }) {
 
   const filteredListings = sortedListings.filter(l => {
     if (isAdmin || !user) return true;
-    const normSuburb = (l.suburb || '').toLowerCase();
+    
+    // Check multi-suburb overlap (Listing can be in multiple hoods)
+    let targetSuburbs = [l.suburb]; 
+    try {
+      if (l.suburbs) {
+        const parsed = typeof l.suburbs === 'string' ? JSON.parse(l.suburbs) : l.suburbs;
+        if (Array.isArray(parsed) && parsed.length > 0) targetSuburbs = parsed;
+      }
+    } catch(e) { }
+
     const normList = unlockedList.map(s => (s || '').toLowerCase());
-    return normList.includes(normSuburb);
+    return targetSuburbs.some(ts => ts && normList.includes(ts.toLowerCase()));
   });
 
   const handleUnlock = async (suburb) => {

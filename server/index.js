@@ -293,11 +293,13 @@ app.get('/api/listings/:id', async (req, res) => {
 });
 
 app.post('/api/listings', async (req, res) => {
-  const { type, title, description, category, suburb, duration, price, is16PlusFriendly, posterId, imageUrls } = req.body;
+  const { type, title, description, category, suburb, duration, price, is16PlusFriendly, posterId, imageUrls, suburbs } = req.body;
+  const finalSuburbs = Array.isArray(suburbs) ? suburbs : [suburb].filter(Boolean);
+  const primarySuburb = finalSuburbs[0] || suburb || 'CBD';
   try {
     const result = await db.query(
-      'INSERT INTO listings (type, title, description, category, suburb, duration, price, is16plusfriendly, posterid, imageurls) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id',
-      [type, title, description, category, suburb, duration, price || null, is16PlusFriendly ? true : false, posterId, JSON.stringify(imageUrls || [])]
+      'INSERT INTO listings (type, title, description, category, suburb, duration, price, is16plusfriendly, posterid, imageurls, suburbs) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id',
+      [type, title, description, category, primarySuburb, duration, price || null, is16PlusFriendly ? true : false, posterId, JSON.stringify(imageUrls || []), JSON.stringify(finalSuburbs)]
     );
     res.json({ id: result.rows[0].id, message: 'Listing created via The Plug' });
   } catch (err) {
