@@ -46,7 +46,19 @@ export default function Profile({ showToast }) {
           <div className="profile-suburb">📍 {user?.homebase || '...'} · Bulawayo</div>
           <div style={{marginTop:'8px',display:'flex',gap:'8px',justifyContent:'center',flexWrap:'wrap'}}>
             <span className="ubuntu-chip"><div className="dot dot-g"></div> Trusted Plug</span>
-            <span className="ubuntu-chip"><div className="dot dot-g"></div> ✅ ID Verified</span>
+            {user?.phoneVerified || user?.phone_verified ? (
+              <span className="ubuntu-chip" style={{borderColor:'var(--green)', color:'var(--green)'}}>
+                <div className="dot dot-g"></div> ✅ ID Verified
+              </span>
+            ) : (
+              <span 
+                className="ubuntu-chip" 
+                style={{borderColor:'#ff6b6b', color:'#ff6b6b', cursor:'pointer'}}
+                onClick={() => navigate('/settings')}
+              >
+                ⚠️ Not Verified
+              </span>
+            )}
           </div>
         </div>
         

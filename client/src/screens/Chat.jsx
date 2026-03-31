@@ -58,6 +58,7 @@ export default function Chat() {
   };
 
   const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
+  const isVerified = user?.phoneVerified || user?.phone_verified;
 
   return (
     <div className="screen active" style={{background:'var(--bg)', display:'flex', flexDirection:'column'}}>
@@ -98,19 +99,42 @@ export default function Chat() {
         ))}
       </div>
 
-      <div style={{padding:'12px 20px 24px', background:'var(--surface)', borderTop:'1px solid var(--border)', display:'flex', gap:'10px', alignItems:'center'}}>
-        <div className="icon-btn">📎</div>
-        <div style={{flex:1, background:'var(--surface2)', borderRadius:'100px', padding:'10px 18px', border:'1px solid var(--border)'}}>
-           <input 
-             style={{width:'100%', background:'none', border:'none', color:'var(--text)', outline:'none', fontSize:'14px'}}
-             placeholder="Type a message..."
-             value={msg}
-             onChange={(e) => setMsg(e.target.value)}
-             onKeyDown={(e) => e.key === 'Enter' && send()}
-           />
+      {isVerified ? (
+        <div style={{padding:'12px 20px 24px', background:'var(--surface)', borderTop:'1px solid var(--border)', display:'flex', gap:'10px', alignItems:'center'}}>
+          <div className="icon-btn">📎</div>
+          <div style={{flex:1, background:'var(--surface2)', borderRadius:'100px', padding:'10px 18px', border:'1px solid var(--border)'}}>
+             <input 
+               style={{width:'100%', background:'none', border:'none', color:'var(--text)', outline:'none', fontSize:'14px'}}
+               placeholder="Type a message..."
+               value={msg}
+               onChange={(e) => setMsg(e.target.value)}
+               onKeyDown={(e) => e.key === 'Enter' && send()}
+             />
+          </div>
+          <div className="icon-btn" style={{background:'var(--green)', color:'#000'}} onClick={send}>⬆️</div>
         </div>
-        <div className="icon-btn" style={{background:'var(--green)', color:'#000'}} onClick={send}>⬆️</div>
-      </div>
+      ) : (
+        <div style={{
+          padding:'16px 20px 28px', background:'var(--surface)', 
+          borderTop:'1px solid var(--border)', textAlign:'center'
+        }}>
+          <div style={{fontSize:'28px', marginBottom:'6px'}}>🔒</div>
+          <div style={{fontSize:'13px', fontWeight:600, marginBottom:'4px'}}>Verify your phone to message</div>
+          <div style={{fontSize:'12px', color:'var(--text-muted)', marginBottom:'12px'}}>
+            Only verified users can send messages on The Plug.
+          </div>
+          <a 
+            href="/settings" 
+            style={{
+              display:'inline-block', padding:'10px 24px',
+              background:'var(--green)', color:'#000', borderRadius:'100px',
+              fontSize:'13px', fontWeight:700, textDecoration:'none'
+            }}
+          >
+            ✅ Verify Now in Settings
+          </a>
+        </div>
+      )}
     </div>
   );
 }

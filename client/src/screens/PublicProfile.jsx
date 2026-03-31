@@ -49,8 +49,17 @@ export default function PublicProfile({ showToast }) {
           </div>
           <h2 className="profile-name">{user.fullName || user.fullname || 'Plug Seller'}</h2>
           <div className="profile-suburb">📍 {user.homeBase || user.homebase || '...'} · <span style={{color:'var(--green)', fontWeight:700}}>{user.ubuntuPoints || user.ubuntupoints || 0} pts</span></div>
-          <div style={{marginTop:'10px'}}>
-             <span className="badge-chip green">⭐ {reputation}</span>
+          <div style={{marginTop:'10px', display:'flex', gap:'8px', justifyContent:'center', flexWrap:'wrap'}}>
+            <span className="badge-chip green">⭐ {reputation}</span>
+            {user?.phone_verified || user?.phoneVerified ? (
+              <span className="badge-chip" style={{background:'rgba(0,255,136,0.15)', color:'var(--green)', border:'1px solid var(--green)'}}>
+                ✅ ID Verified
+              </span>
+            ) : (
+              <span className="badge-chip" style={{background:'rgba(255,107,107,0.15)', color:'#ff6b6b', border:'1px solid #ff6b6b'}}>
+                ⚠️ Not Verified
+              </span>
+            )}
           </div>
         </div>
 

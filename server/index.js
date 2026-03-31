@@ -2,12 +2,23 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const db = require('./db');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// Africa's Talking setup (sandbox mode until real keys provided)
+const AfricasTalking = require('africastalking');
+const AT_USERNAME = process.env.AT_USERNAME || 'sandbox';
+const AT_API_KEY = process.env.AT_API_KEY || 'your-sandbox-key';
+const atClient = AfricasTalking({ username: AT_USERNAME, apiKey: AT_API_KEY });
+const atSMS = atClient.SMS;
+
+// Helper: generate 6-digit OTP
+const generateOTP = () => String(Math.floor(100000 + Math.random() * 900000));
 
 // Auth & Users
 app.post('/api/auth/register', async (req, res) => {
@@ -26,7 +37,9 @@ app.post('/api/auth/register', async (req, res) => {
                 ubuntupoints as "ubuntupoints", 
                 phone, dob, deviceid,
                 avatarurl as "avatarUrl",
-                avatarurl as "avatarurl"
+                avatarurl as "avatarurl",
+                phone_verified as "phoneVerified",
+                blacklisted
     `, [fullname, phone, dob, deviceid, homebase, password]);
     res.json(result.rows[0]);
   } catch (err) {
@@ -48,19 +61,99 @@ app.post('/api/auth/login', async (req, res) => {
              ubuntupoints as "ubuntupoints", 
              password, phone, dob, deviceid,
              avatarurl as "avatarUrl",
-             avatarurl as "avatarurl"
+             avatarurl as "avatarurl",
+             phone_verified as "phoneVerified",
+             blacklisted
       FROM users WHERE phone = $1 OR fullname = $1
     `, [phone]);
     if (result.rows.length === 0) return res.status(400).json({ error: 'User not found' });
     
     const user = result.rows[0];
+
+    // Blacklist check
+    if (user.blacklisted) {
+      return res.status(403).json({ error: 'This account has been suspended. Contact support.' });
+    }
+
     if (user.password !== password) {
       return res.status(401).json({ error: 'Incorrect password' });
+    }
+
+    // Update device fingerprint on each login
+    const { deviceid: newDevice } = req.body;
+    if (newDevice && newDevice !== user.deviceid) {
+      await db.query('UPDATE users SET deviceid = $1 WHERE id = $2', [newDevice, user.id]);
+      user.deviceid = newDevice;
     }
     
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ==== OTP: Request Code ====
+app.post('/api/auth/request-otp', async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ error: 'Phone required' });
+
+  const code = generateOTP();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  try {
+    // Invalidate old codes
+    await db.query('UPDATE otp_codes SET used = TRUE WHERE phone = $1', [phone]);
+    // Store new code
+    await db.query(
+      'INSERT INTO otp_codes (phone, code, expires_at) VALUES ($1, $2, $3)',
+      [phone, code, expiresAt]
+    );
+
+    // Send SMS
+    if (AT_USERNAME === 'sandbox') {
+      // Sandbox mode - log to console (visible in Render logs / local terminal)
+      console.log(`[OTP SANDBOX] Phone: ${phone} → Code: ${code}`);
+      res.json({ success: true, sandbox: true, debug_code: code });
+    } else {
+      // Production - send real SMS
+      await atSMS.send({
+        to: [phone],
+        message: `Your Plug verification code is: ${code}. Valid for 10 minutes. Do not share this code.`,
+        from: 'ThePlug'
+      });
+      res.json({ success: true });
+    }
+  } catch (err) {
+    console.error('OTP Error:', err);
+    res.status(500).json({ error: 'Failed to send OTP' });
+  }
+});
+
+// ==== OTP: Verify Code ====
+app.post('/api/auth/verify-otp', async (req, res) => {
+  const { phone, code, userId } = req.body;
+  if (!phone || !code) return res.status(400).json({ error: 'Phone and code required' });
+
+  try {
+    const result = await db.query(
+      'SELECT * FROM otp_codes WHERE phone = $1 AND code = $2 AND used = FALSE AND expires_at > NOW() ORDER BY createdat DESC LIMIT 1',
+      [phone, code]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid or expired code. Please try again.' });
+    }
+
+    // Mark code as used
+    await db.query('UPDATE otp_codes SET used = TRUE WHERE id = $1', [result.rows[0].id]);
+
+    // Mark user as verified
+    await db.query('UPDATE users SET phone_verified = TRUE WHERE id = $1', [userId]);
+
+    res.json({ success: true, verified: true });
+  } catch (err) {
+    console.error('Verify Error:', err);
+    res.status(500).json({ error: 'Verification failed' });
   }
 });
 
@@ -75,7 +168,10 @@ app.get('/api/auth/check-name/:name', async (req, res) => {
 
 app.get('/api/users/:id', async (req, res) => {
   try {
-    const result = await db.query('SELECT id, fullname, fullname as "fullName", homebase, homebase as "homeBase", ubuntupoints, ubuntupoints as "ubuntuPoints", avatarurl as "avatarUrl", avatarurl as "avatarurl" FROM users WHERE id = $1', [req.params.id]);
+    const result = await db.query(
+      'SELECT id, fullname, fullname as "fullName", homebase, homebase as "homeBase", ubuntupoints, ubuntupoints as "ubuntuPoints", avatarurl as "avatarUrl", avatarurl as "avatarurl", phone_verified, phone_verified as "phoneVerified" FROM users WHERE id = $1',
+      [req.params.id]
+    );
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     res.json(result.rows[0]);
   } catch (err) {
@@ -315,6 +411,34 @@ app.get('/api/admin/stats', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Admin: Blacklist a user by ID (bans phone + deviceId)
+app.post('/api/admin/blacklist/:id', async (req, res) => {
+  const { reason } = req.body;
+  try {
+    await db.query(
+      'UPDATE users SET blacklisted = TRUE, blacklist_reason = $1 WHERE id = $2',
+      [reason || 'Violation of community guidelines', req.params.id]
+    );
+    res.json({ success: true, message: 'User blacklisted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin: Unblacklist a user
+app.post('/api/admin/unblacklist/:id', async (req, res) => {
+  try {
+    await db.query(
+      'UPDATE users SET blacklisted = FALSE, blacklist_reason = NULL WHERE id = $1',
+      [req.params.id]
+    );
+    res.json({ success: true, message: 'User reinstated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`The Plug Backend running on port ${PORT}`);
