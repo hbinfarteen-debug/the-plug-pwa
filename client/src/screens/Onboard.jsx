@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { neighborhoods } from '../data/neighborhoods';
+import { supabase } from '../supabase';
 
 export default function Onboard({ showToast }) {
   const navigate = useNavigate();
@@ -23,19 +24,53 @@ export default function Onboard({ showToast }) {
   const checkNameAvailability = async () => {
     if (!fullName || fullName.length < 3) return setNameError('Name too short (min 3 chars)');
     setCheckingName(true);
+    setNameError('');
     try {
-      const res = await fetch(`/api/auth/check-name/${encodeURIComponent(fullName)}`);
-      const data = await res.json();
-      if (!data.available) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .ilike('fullname', fullName)
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
         setNameError('This Plug name is already taken! 🛑');
       } else {
         setNameError('');
         nxt(3);
       }
     } catch (e) {
-      setNameError('Error checking name availability');
+      setNameError(`Error: ${e.message || 'Could not check name'}`);
     }
     setCheckingName(false);
+  };
+
+  const completeOnboarding = async () => {
+    showToast(`Welcome to THE PLUG, ${fullName}! 🎉`,'success');
+    
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          fullname: fullName,
+          phone: '263' + Math.floor(Math.random()*100000000),
+          dob: '1990-01-01',
+          deviceid: 'dev_' + Math.random().toString(36).substr(2, 9),
+          homebase: suburb || 'Makokoba',
+          ubuntupoints: 100,
+          role: 'user'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      localStorage.setItem('plug_user', JSON.stringify(data));
+      setTimeout(()=>navigate('/home'), 1500);
+    } catch (e) {
+      console.error('Registration error:', e);
+      showToast('Error saving profile: ' + (e.message || ''), 'error');
+    }
   };
 
   return (
@@ -159,29 +194,7 @@ export default function Onboard({ showToast }) {
               <h4>❓ KNOWLEDGE CHECK</h4>
               <p>What happens if you don't show up for a job you agreed to?</p>
               <div className="quiz-opt" onClick={()=>{showToast('Wrong! 🤔','error')}}>A) Nothing happens</div>
-              <div className="quiz-opt" onClick={async ()=>{
-                showToast(`Welcome to THE PLUG, ${fullName}! 🎉`,'success');
-                
-                // Save user to backend
-                try {
-                  const res = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      fullName,
-                      phone: '263' + Math.floor(Math.random()*100000000), 
-                      dob: '1990-01-01',
-                      deviceId: 'dev_' + Math.random().toString(36).substr(2, 9),
-                      homeBase: suburb || 'Makokoba'
-                    })
-                  });
-                  const userData = await res.json();
-                  localStorage.setItem('plug_user', JSON.stringify(userData));
-                  setTimeout(()=>navigate('/home'), 1500);
-                } catch (e) {
-                  showToast('Error saving profile', 'error');
-                }
-              }}>B) You lose −5 Ubuntu Points</div>
+              <div className="quiz-opt" onClick={completeOnboarding}>B) You lose −5 Ubuntu Points</div>
               <div className="quiz-opt" onClick={()=>{showToast('Incorrect. Read the code again!','error')}}>C) Your account is deleted</div>
             </div>
             <p style={{fontSize:'12px', fontStyle:'italic', color:'var(--text-muted)', marginTop:'20px', lineHeight:1.5}}>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { uploadListingImages } from '../supabase';
+import { API_BASE_URL } from '../config';
 
 export default function PostListing({ showToast }) {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ export default function PostListing({ showToast }) {
     }
 
     try {
-      const res = await fetch('/api/listings', {
+      const res = await fetch(`${API_BASE_URL}/api/listings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

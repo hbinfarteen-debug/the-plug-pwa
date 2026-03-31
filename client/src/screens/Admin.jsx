@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 export default function Admin({ showToast }) {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ activeItems: 0, activeGigs: 0, openDisputes: 0 });
 
   useEffect(() => {
-    fetch('/api/admin/stats')
+    fetch(`${API_BASE_URL}/api/admin/stats`)
       .then(res => res.json())
       .then(data => setStats(data))
       .catch(console.error);

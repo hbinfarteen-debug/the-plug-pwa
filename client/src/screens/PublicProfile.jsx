@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 export default function PublicProfile({ showToast }) {
   const { id } = useParams();
@@ -9,7 +10,7 @@ export default function PublicProfile({ showToast }) {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/users/${id}`)
+    fetch(`${API_BASE_URL}/api/users/${id}`)
       .then(res => {
         if (!res.ok) throw new Error('Not found');
         return res.json();

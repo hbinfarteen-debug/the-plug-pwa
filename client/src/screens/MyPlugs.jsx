@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 export default function MyPlugs({ showToast, onSuccess }) {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function MyPlugs({ showToast, onSuccess }) {
       return;
     }
 
-    fetch(`/api/users/${user.id}/plugs`)
+    fetch(`${API_BASE_URL}/api/users/${user.id}/plugs`)
       .then(res => res.json())
       .then(data => {
         setPlugs(data);

@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config';
 
 export default function Detail({ showToast }) {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ export default function Detail({ showToast }) {
   const [bidAmount, setBidAmount] = useState('');
 
   useEffect(() => {
-    fetch(`/api/listings/${id}`)
+    fetch(`${API_BASE_URL}/api/listings/${id}`)
       .then(res => res.json())
       .then(data => {
         setListing(data);
@@ -26,7 +27,7 @@ export default function Detail({ showToast }) {
     if (!user.id) return showToast('Please onboard first!', 'error');
 
     try {
-      const res = await fetch(`/api/listings/${id}/bid`, {
+      const res = await fetch(`${API_BASE_URL}/api/listings/${id}/bid`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bidderId: user.id, amount: parseFloat(bidAmount) })
@@ -35,7 +36,7 @@ export default function Detail({ showToast }) {
         showToast("Bid placed! You're winning 🎉", 'success');
         setBidAmount('');
         // Refresh listing
-        const updated = await fetch(`/api/listings/${id}`).then(r => r.json());
+        const updated = await fetch(`${API_BASE_URL}/api/listings/${id}`).then(r => r.json());
         setListing(updated);
       }
     } catch (e) {

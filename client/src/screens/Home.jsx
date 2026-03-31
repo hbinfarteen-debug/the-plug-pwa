@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config';
 
 export default function Home({ showToast }) {
   const navigate = useNavigate();
@@ -8,7 +9,7 @@ export default function Home({ showToast }) {
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    fetch('/api/listings')
+    fetch(`${API_BASE_URL}/api/listings`)
       .then(res => res.json())
       .then(data => {
         setListings(data);
