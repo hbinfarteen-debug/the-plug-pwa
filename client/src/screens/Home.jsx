@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.png';
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 
@@ -121,7 +122,12 @@ export default function Home({ showToast }) {
   return (
     <div className="screen active">
       <div className="topbar">
-        <div className="logo" onClick={() => navigate('/home')}>THE<span>PLUG</span></div>
+        <img 
+          src={logo} 
+          alt="The Plug" 
+          onClick={() => navigate('/home')} 
+          style={{height:'22px', width:'auto', cursor:'pointer'}} 
+        />
         <div style={{display:'flex',gap:'15px'}}>
           <div className="icon-btn" onClick={() => navigate('/messages')} style={{position:'relative'}}>💬<div className="badge"></div></div>
           <div className="icon-btn" onClick={() => navigate('/messages')}>🔔</div>
