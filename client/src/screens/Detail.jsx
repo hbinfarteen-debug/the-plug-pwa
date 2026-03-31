@@ -76,8 +76,17 @@ export default function Detail({ showToast }) {
   return (
     <div className="screen active">
       <div className="detail-img" style={{padding:0, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center'}}>
-        {listing.imageUrls && (typeof listing.imageUrls === 'string' ? JSON.parse(listing.imageUrls) : listing.imageUrls).length > 0 ? (
-          <img src={typeof listing.imageUrls === 'string' ? JSON.parse(listing.imageUrls)[0] : listing.imageUrls[0]} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="listing" />
+        {listing.imageUrls && listing.imageUrls !== '[]' ? (
+          <img 
+            src={(() => {
+              try {
+                const parsed = typeof listing.imageUrls === 'string' ? JSON.parse(listing.imageUrls) : listing.imageUrls;
+                return Array.isArray(parsed) ? parsed[0] : parsed;
+              } catch(e) { return null; }
+            })()} 
+            style={{width:'100%',height:'100%',objectFit:'cover'}} 
+            alt="listing" 
+          />
         ) : (
           listing.type === 'item' ? '🎮' : '🌿'
         )}

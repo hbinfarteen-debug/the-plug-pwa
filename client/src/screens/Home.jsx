@@ -23,13 +23,16 @@ export default function Home({ showToast }) {
     }
 
     fetch(`${API_BASE_URL}/api/listings`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch feed');
+        return res.json();
+      })
       .then(data => {
         setListings(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(err => {
-        console.error(err);
+        console.error('Feed error:', err);
         setLoading(false);
       });
   }, [navigate]);
@@ -77,8 +80,17 @@ export default function Home({ showToast }) {
                   {filteredListings.slice(0, 4).map(l => (
                     <div key={l.id} className="urgency-card" onClick={()=>navigate(`/detail/${l.id}`)}>
                       <div className="urgency-img" style={{padding:0, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                        {l.imageUrls ? (
-                          <img src={typeof l.imageUrls === 'string' ? JSON.parse(l.imageUrls)[0] : l.imageUrls[0]} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="listing" />
+                        {l.imageUrls && l.imageUrls !== '[]' ? (
+                          <img 
+                            src={(() => {
+                              try {
+                                const parsed = typeof l.imageUrls === 'string' ? JSON.parse(l.imageUrls) : l.imageUrls;
+                                return Array.isArray(parsed) ? parsed[0] : parsed;
+                              } catch(e) { return null; }
+                            })()} 
+                            style={{width:'100%',height:'100%',objectFit:'cover'}} 
+                            alt="listing" 
+                          />
                         ) : (
                           l.type === 'item' ? '🎮' : '🌿'
                         )}
@@ -97,15 +109,24 @@ export default function Home({ showToast }) {
                 {items.length > 0 ? items.map(l => (
                   <div key={l.id} className="listing-card" onClick={()=>navigate(`/detail/${l.id}`)}>
                     <div className="listing-thumb" style={{padding:0, overflow:'hidden'}}>
-                      {l.imageUrls ? (
-                        <img src={typeof l.imageUrls === 'string' ? JSON.parse(l.imageUrls)[0] : l.imageUrls[0]} style={{width:'100%',height:'100%',objectFit:'cover'}} alt="listing" />
+                      {l.imageUrls && l.imageUrls !== '[]' ? (
+                        <img 
+                          src={(() => {
+                            try {
+                              const parsed = typeof l.imageUrls === 'string' ? JSON.parse(l.imageUrls) : l.imageUrls;
+                              return Array.isArray(parsed) ? parsed[0] : parsed;
+                            } catch(e) { return null; }
+                          })()} 
+                          style={{width:'100%',height:'100%',objectFit:'cover'}} 
+                          alt="listing" 
+                        />
                       ) : (
                         '🎮'
                       )}
                     </div>
                     <div className="listing-body">
                       <h4>{l.title}</h4>
-                      <div className="listing-meta"><span className="listing-price">${l.price?.toFixed(2)}</span><span className="listing-time">22h left</span></div>
+                      <div className="listing-meta"><span className="listing-price">${(l.price || 0).toFixed(2)}</span><span className="listing-time">22h left</span></div>
                       <div className="listing-suburb">📍 {l.suburb}</div>
                       <div className="ubuntu-chip"><div className="dot dot-g"></div> {l.ubuntupoints} pts · {l.fullname}</div>
                     </div>
@@ -127,7 +148,7 @@ export default function Home({ showToast }) {
                       <span className="gig-stat">💰 <strong>{l.bidCount || 0} bids</strong></span>
                       <span className="gig-stat">📍 <strong>{l.suburb}</strong></span>
                     </div>
-                    {l.is16PlusFriendly === 1 && <div style={{marginTop:'9px'}}><span className="youth-tag">✅ 16+ Friendly</span></div>}
+                    {l.is16PlusFriendly && <div style={{marginTop:'9px'}}><span className="youth-tag">✅ 16+ Friendly</span></div>}
                   </div>
                 )) : <p style={{padding:'0 20px', color:'var(--text-muted)'}}>No gigs available in {user?.homebase}.</p>}
               </>
