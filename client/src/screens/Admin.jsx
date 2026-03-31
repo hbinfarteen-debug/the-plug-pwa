@@ -248,8 +248,8 @@ export default function Admin({ showToast }) {
 
             <div className="admin-results">
               {(searchQuery ? searchResults : allUsers).map(u => (
-                <div key={u.id} className="listing-card" style={{padding:'12px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                  <div>
+                <div key={u.id} className="listing-card" style={{padding:'12px', display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer'}} onClick={() => navigate(`/profile/${u.id}`)}>
+                  <div style={{flex:1}}>
                      <div style={{fontWeight:700, fontSize:'14px'}}>{u.fullname} {u.blacklisted && <span style={{color:'var(--red)', fontSize:'10px'}}>SUSPENDED</span>}</div>
                      <div style={{fontSize:'12px', color:'var(--text-muted)'}}>+{u.phone} · {u.homebase}</div>
                      <div style={{fontSize:'11px', color:'var(--green)', fontWeight:700}}>{u.ubuntupoints} pts</div>
@@ -262,7 +262,10 @@ export default function Admin({ showToast }) {
                       border: u.blacklisted ? 'none' : '1px solid rgba(255,107,107,0.3)',
                       minWidth: '100px'
                     }}
-                    onClick={() => toggleBlacklist(u.id, u.blacklisted)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleBlacklist(u.id, u.blacklisted);
+                    }}
                   >
                     {u.blacklisted ? 'Reinstate' : 'Suspend'}
                   </button>

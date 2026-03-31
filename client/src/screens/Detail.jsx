@@ -9,6 +9,7 @@ export default function Detail({ showToast, t }) {
   const [loading, setLoading] = useState(true);
   const [biting, setBiting] = useState(false);
   const [bidAmount, setBidAmount] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const getTimeRemaining = (createdAt, durationHours) => {
     try {
@@ -95,7 +96,26 @@ export default function Detail({ showToast, t }) {
 
   return (
     <div className="screen active">
-      <div className="detail-img" style={{padding:0, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center'}}>
+      {isFullscreen && (
+        <div className="fullscreen-overlay" onClick={() => setIsFullscreen(false)} style={{
+          position:'fixed', top:0, left:0, width:'100vw', height:'100vh', 
+          background:'rgba(0,0,0,0.95)', zIndex:2000, display:'flex', 
+          alignItems:'center', justifyContent:'center', backdropFilter:'blur(10px)'
+        }}>
+          <img 
+            src={(() => {
+              try {
+                const parsed = typeof listing.imageUrls === 'string' ? JSON.parse(listing.imageUrls) : listing.imageUrls;
+                return Array.isArray(parsed) ? parsed[0] : parsed;
+              } catch(e) { return null; }
+            })()} 
+            style={{maxWidth:'95%', maxHeight:'90%', borderRadius:'12px', boxShadow:'0 0 40px rgba(0,0,0,0.5)'}} 
+            alt="fullscreen" 
+          />
+          <div style={{position:'absolute', top:'20px', right:'20px', color:'#fff', fontSize:'24px', fontWeight:300}}>✕</div>
+        </div>
+      )}
+      <div className="detail-img" onClick={() => setIsFullscreen(true)} style={{padding:0, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', cursor:'zoom-in'}}>
         {listing.imageUrls && listing.imageUrls !== '[]' ? (
           <img 
             src={(() => {
