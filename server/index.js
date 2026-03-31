@@ -444,9 +444,10 @@ app.get('/api/admin/stats', async (req, res) => {
       SELECT 
         (SELECT COUNT(*) FROM listings WHERE type='item' AND status='active') as "activeItems",
         (SELECT COUNT(*) FROM listings WHERE type='gig' AND status='active') as "activeGigs",
-        (SELECT COUNT(*) FROM disputes WHERE status='open') as "openDisputes"
+        (SELECT COUNT(*) FROM disputes WHERE status='open') as "openDisputes",
+        (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status='approved') as "totalRevenue"
     `);
-    res.json(result.rows[0] || { activeItems: 0, activeGigs: 0, openDisputes: 0 });
+    res.json(result.rows[0] || { activeItems: 0, activeGigs: 0, openDisputes: 0, totalRevenue: 0 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
