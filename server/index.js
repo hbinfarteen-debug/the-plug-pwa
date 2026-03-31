@@ -14,10 +14,18 @@ app.post('/api/auth/register', async (req, res) => {
   const { fullname, phone, dob, deviceid, homebase, password } = req.body;
   
   try {
-    const result = await db.query(
-      'INSERT INTO users (fullname, phone, dob, deviceid, homebase, password) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [fullname, phone, dob, deviceid, homebase, password]
-    );
+    const result = await db.query(`
+      INSERT INTO users (fullname, phone, dob, deviceid, homebase, password) 
+      VALUES ($1, $2, $3, $4, $5, $6) 
+      RETURNING id, 
+                fullname as "fullName", 
+                fullname as "fullname", 
+                homebase as "homeBase", 
+                homebase as "homebase", 
+                ubuntupoints as "ubuntuPoints", 
+                ubuntupoints as "ubuntupoints", 
+                phone, dob, deviceid
+    `, [fullname, phone, dob, deviceid, homebase, password]);
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -28,7 +36,17 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   const { phone, password } = req.body;
   try {
-    const result = await db.query('SELECT * FROM users WHERE phone = $1', [phone]);
+    const result = await db.query(`
+      SELECT id, 
+             fullname as "fullName", 
+             fullname as "fullname", 
+             homebase as "homeBase", 
+             homebase as "homebase", 
+             ubuntupoints as "ubuntuPoints", 
+             ubuntupoints as "ubuntupoints", 
+             password, phone, dob, deviceid
+      FROM users WHERE phone = $1 OR fullname = $1
+    `, [phone]);
     if (result.rows.length === 0) return res.status(400).json({ error: 'User not found' });
     
     const user = result.rows[0];
