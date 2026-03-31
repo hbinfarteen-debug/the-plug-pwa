@@ -8,6 +8,20 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+const ALL_SUBURBS = [
+  "Ascot", "Barbourfields", "Barham Green", "Bellevue", "Belmont", "Belview", "Benneydale", "Branton", "Bradfield", "Burnside", 
+  "CBD", "Cement", "Charlemont", "Cowdray Park", "Donnington", "Douglasdale", "Dunstal", "Emakhandeni", "Emganwini", "Enclave", 
+  "Entumbane", "Eloana", "Enqotsheni", "Envas", "Famona", "Four Winds", "Glencoe", "Glengarry", "Greenhill", "Gwabalanda", 
+  "Harrisvale", "Helenvale", "Highmount", "Hillcrest", "Hillside", "Holmlane", "Hopeville", "Ilanda", "Iminyela", "Kelvin", 
+  "Killarney", "Kings City", "Kingsdale", "Kumalo", "Lakeside", "Lobengula", "Lochview", "Lower Range", "Lucydale", "Luveve", 
+  "Mabuthweni", "Magwegwe", "Mahatshula", "Makokoba", "Malindela", "Marlands", "Matshobana", "Matsheumhlope", "Montgomery", "Montrose", 
+  "Morningside", "Mpopoma", "Mzilikazi", "Newton West", "Nguboyenja", "Njube", "Nketa", "Nkulumane", "North End", "Northlea", 
+  "Northlynne", "Northvale", "Orange Grove", "Paddonhurst", "Parklands", "Parkmont", "Pelandaba", "Pelandaba West", "Picnic Park", "Pumula", 
+  "Rangemore", "Raylton", "Richmond", "Riverside", "Romney Park", "Sauerstown", "Selbourne Park", "Selwyn", "Sizinda", "Southway", 
+  "Southwold", "Steeldale", "Suburbs", "Sunnyside", "Sunninghill", "Tegela", "Thorngrove", "Trenance", "Tshabalala", "Umwinsidale", 
+  "Waterford", "Willsgrove", "Windy Ridge", "Woodville", "Woodlands"
+];
+
 // Initialize Paynow
 const paynow = new Paynow(
   process.env.PAYNOW_ID || '11776', 
@@ -620,6 +634,35 @@ app.get('/api/admin/won-bids', async (req, res) => {
       ORDER BY l.createdat DESC
     `);
     res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin: Sanitize Suburbs (One-time cleanup)
+app.post('/api/admin/sanitize-suburbs', async (req, res) => {
+  try {
+    const listLower = ALL_SUBURBS.map(s => s.toLowerCase());
+    const placeholders = listLower.map((_, i) => `$${i + 1}`).join(',');
+    
+    // 1. Remove listings with invalid suburbs
+    const delRes = await db.query(`
+      DELETE FROM listings 
+      WHERE LOWER(suburb) NOT IN (${placeholders})
+    `, listLower);
+
+    // 2. Reset invalid user homebases to 'CBD'
+    const updRes = await db.query(`
+      UPDATE users 
+      SET homebase = 'CBD' 
+      WHERE LOWER(homebase) NOT IN (${placeholders})
+    `, listLower);
+
+    res.json({
+      message: "Sanitization complete",
+      listingsDeleted: delRes.rowCount,
+      usersUpdated: updRes.rowCount
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

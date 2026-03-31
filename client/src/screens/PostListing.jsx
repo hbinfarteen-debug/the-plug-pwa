@@ -2,13 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { uploadListingImages } from '../supabase';
 import { API_BASE_URL } from '../config';
-
-const ALL_SUBURBS = [
-  'Makokoba', 'Burnside', 'Cowdray Park', 'Nkulumane', 'Hillside', 
-  'Morningside', 'Bradfield', 'Queens Park', 'Magwegwe', 'Pumula', 
-  'Sizinda', 'Entumbane', 'Njube', 'Hyde Park', 'Selborne Park', 
-  'Kumalo', 'Suburbs', 'Malindela', 'Ilanda'
-];
+import { ALL_SUBURBS } from '../utils/suburbs';
 
 export default function PostListing({ showToast }) {
   const navigate = useNavigate();
@@ -19,12 +13,10 @@ export default function PostListing({ showToast }) {
   const [category, setCategory] = useState('Tech & Electronics');
   const [price, setPrice] = useState('1.00');
   const [is16PlusFriendly, setIs16PlusFriendly] = useState(false);
-  const [selectedSuburb, setSelectedSuburb] = useState(() => {
-    const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
-    return user.homeBase || user.homebase || '';
-  });
-
+  const [selectedSuburb, setSelectedSuburb] = useState(JSON.parse(localStorage.getItem('plug_user') || '{}').homeBase || JSON.parse(localStorage.getItem('plug_user') || '{}').homebase);
   const [duration, setDuration] = useState(24);
+  const [loading, setLoading] = useState(false);
+  const [locationSearch, setLocationSearch] = useState('');
   const [images, setImages] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -139,21 +131,34 @@ export default function PostListing({ showToast }) {
           </div>
           
           <div className="form-group">
-            <label className="form-label">LISTING LOCATION</label>
-            <div className="dur-grid" style={{gridTemplateColumns:'repeat(auto-fill, minmax(130px, 1fr))', maxHeight:'300px', overflowY:'auto', padding:'5px'}}>
+            <label className="form-label">LISTING LOCATION ({selectedSuburb || 'Required'})</label>
+            <input 
+              className="field-input" 
+              placeholder="Search neighborhoods..." 
+              value={locationSearch}
+              onChange={(e) => setLocationSearch(e.target.value)}
+              style={{marginBottom:'10px', height:'38px', fontSize:'13px'}}
+            />
+            <div className="dur-grid" style={{gridTemplateColumns:'repeat(auto-fill, minmax(130px, 1fr))', maxHeight:'250px', overflowY:'auto', padding:'5px', border:'1px solid var(--border)', borderRadius:'12px'}}>
               {(() => {
                 const u = JSON.parse(localStorage.getItem('plug_user') || '{}');
                 const home = u.homeBase || u.homebase;
                 const isAdmin = u.phone === '263715198745' || u.phone === '+263715198745' || 
                                 u.phone === '263775939688' || u.phone === '+263775939688';
                 
-                if (isAdmin) return ALL_SUBURBS;
+                let pool = isAdmin ? ALL_SUBURBS : [];
+                if (!isAdmin) {
+                  const unlocked = typeof u.unlockedSuburbs === 'string' 
+                    ? JSON.parse(u.unlockedSuburbs || '[]') 
+                    : (u.unlockedSuburbs || []);
+                  pool = Array.from(new Set([home, ...unlocked])).filter(Boolean);
+                }
 
-                const unlocked = typeof u.unlockedSuburbs === 'string' 
-                  ? JSON.parse(u.unlockedSuburbs || '[]') 
-                  : (u.unlockedSuburbs || []);
+                if (locationSearch) {
+                   pool = pool.filter(s => s.toLowerCase().includes(locationSearch.toLowerCase()));
+                }
                 
-                return Array.from(new Set([home, ...unlocked])).filter(Boolean);
+                return pool;
               })().map(loc => {
                 const u = JSON.parse(localStorage.getItem('plug_user') || '{}');
                 const home = u.homeBase || u.homebase;
@@ -164,6 +169,9 @@ export default function PostListing({ showToast }) {
                   </div>
                 );
               })}
+              {locationSearch && !ALL_SUBURBS.some(s => s.toLowerCase().includes(locationSearch.toLowerCase())) && (
+                <div style={{gridColumn:'1/-1', padding:'20px', textAlign:'center', color:'var(--text-muted)', fontSize:'12px'}}>No matching neighborhood found.</div>
+              )}
             </div>
           </div>
 

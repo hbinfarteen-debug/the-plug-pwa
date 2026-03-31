@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/logo.png';
+import logo from '../assets/plug_logo.png';
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { ALL_SUBURBS } from '../utils/suburbs';
 
 export default function Home({ showToast, t }) {
   const navigate = useNavigate();
@@ -11,13 +12,7 @@ export default function Home({ showToast, t }) {
   const [filter, setFilter] = useState('all');
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
-
-  const ALL_SUBURBS = [
-    'Makokoba', 'Burnside', 'Cowdray Park', 'Nkulumane', 'Hillside', 
-    'Morningside', 'Bradfield', 'Queens Park', 'Magwegwe', 'Pumula', 
-    'Sizinda', 'Entumbane', 'Njube', 'Hyde Park', 'Selborne Park', 
-    'Kumalo', 'Suburbs', 'Malindela', 'Ilanda'
-  ];
+  const [searchTerm, setSearchTerm] = useState('');
 
   const getTimeRemaining = (createdAt, durationHours) => {
     try {

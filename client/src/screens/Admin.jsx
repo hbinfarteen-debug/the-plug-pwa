@@ -15,6 +15,7 @@ export default function Admin({ showToast }) {
   const [wonBids, setWonBids] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingBids, setLoadingBids] = useState(false);
+  const [sanitizing, setSanitizing] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/admin/stats`)
@@ -178,6 +179,19 @@ export default function Admin({ showToast }) {
               <div className="admin-stat"><div className="num a">{stats.openDisputes}</div><div className="lbl">Open Disputes</div></div>
               <div className="admin-stat" style={{border:'1px solid var(--green)', boxShadow:'inset 0 0 10px rgba(0,232,122,0.1)'}}><div className="num g">${(stats.totalRevenue || 0).toFixed(2)}</div><div className="lbl">Total Earnings</div></div>
             </div>
+
+            <div className="asec" style={{border:'1px solid rgba(255,107,107,0.2)', background:'rgba(255,107,107,0.05)'}}>
+                <h3>🧹 Database Sanitizer</h3>
+                <p style={{fontSize:'12px', color:'var(--text-muted)', marginBottom:'12px'}}>Remove all listings and reset user profiles associated with neighborhoods NOT on the official Bulawayo list.</p>
+                <button 
+                  className="btn-primary" 
+                  style={{background:'var(--red)', color:'#fff', border:'none'}}
+                  onClick={handleSanitizeSuburbs}
+                  disabled={sanitizing}
+                >
+                  {sanitizing ? 'Sanitizing...' : 'Cleanup Database Now 🚩'}
+                </button>
+             </div>
 
             <div className="asec">
               <h3>💰 Revenue & Boosts</h3>
