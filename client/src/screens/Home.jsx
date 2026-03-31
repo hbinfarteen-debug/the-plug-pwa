@@ -35,6 +35,24 @@ export default function Home({ showToast }) {
         console.error('Feed error:', err);
         setLoading(false);
       });
+
+    // Check if blacklisted or verification status changed
+    if (user?.id) {
+      fetch(`${API_BASE_URL}/api/users/${user.id}`)
+        .then(res => res.json())
+        .then(dbUser => {
+          if (dbUser.blacklisted) {
+            showToast('Account suspended', 'error');
+            localStorage.clear();
+            navigate('/onboard');
+          } else if (dbUser.phoneVerified !== user.phoneVerified) {
+             const updated = { ...user, phoneVerified: dbUser.phoneVerified };
+             localStorage.setItem('plug_user', JSON.stringify(updated));
+             setUser(updated);
+          }
+        })
+        .catch(() => {});
+    }
   }, [navigate]);
 
   // Filter based on user's homebase and selected type
@@ -65,6 +83,27 @@ export default function Home({ showToast }) {
            📍 Showing Plugs in <strong>{user?.homebase || 'your area'}</strong> 
            {user?.ubuntupoints < 150 && <span style={{marginLeft:'5px'}}>(Get 150 pts to unlock more)</span>}
         </div>
+
+        {!(user?.phoneVerified || user?.phone_verified) && (
+          <div style={{
+            margin:'15px 20px', padding:'16px', background:'rgba(255, 107, 107, 0.1)', 
+            border:'1px solid rgba(255, 107, 107, 0.3)', borderRadius:'12px',
+            display:'flex', alignItems:'center', gap:'12px'
+          }}>
+            <div style={{fontSize:'24px'}}>🔐</div>
+            <div style={{flex:1}}>
+               <div style={{fontSize:'13px', fontWeight:700, color:'#ff6b6b'}}>Verification Required</div>
+               <div style={{fontSize:'11px', color:'var(--text-muted)'}}>Verify your device to message, bid, or post.</div>
+            </div>
+            <button 
+              className="btn-sm" 
+              style={{background:'var(--red)', color:'#fff', border:'none'}}
+              onClick={() => navigate('/settings')}
+            >
+              Verify
+            </button>
+          </div>
+        )}
 
         {loading ? (
           <div style={{padding:'20px',textAlign:'center'}}>Loading the feed...</div>
