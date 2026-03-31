@@ -98,7 +98,7 @@ export default function Home({ showToast, t }) {
                     user?.phone === '263775939688' || user?.phone === '+263775939688';
 
     if (isAdmin) {
-      return ALL_SUBURBS;
+      return ['ADMIN_ALL'];
     }
 
     try {
@@ -113,11 +113,15 @@ export default function Home({ showToast, t }) {
     }
   };
 
-  const unlockedList = getUnlockedList();
+  const isAdmin = user?.phone === '263715198745' || user?.phone === '+263715198745' || 
+                  user?.phone === '263775939688' || user?.phone === '+263775939688';
 
-  const filteredListings = sortedListings.filter(l => 
-    (!user || unlockedList.includes(l.suburb))
-  );
+  const filteredListings = sortedListings.filter(l => {
+    if (isAdmin || !user) return true;
+    const normSuburb = (l.suburb || '').toLowerCase();
+    const normList = unlockedList.map(s => (s || '').toLowerCase());
+    return normList.includes(normSuburb);
+  });
 
   const handleUnlock = async (suburb) => {
     setUnlocking(true);
@@ -172,8 +176,8 @@ export default function Home({ showToast, t }) {
 
         <div style={{padding:'10px 20px', backgroundColor:'var(--surface)', borderBottom:'1px solid var(--border)', fontSize:'12px', color:'var(--text-muted)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
            <div>
-             📍 {t.showingPlugs.replace('{suburbs}', (unlockedList.join(', ') || 'your area'))}
-             {user?.ubuntupoints < 150 && unlockedList.length === 1 && <span style={{marginLeft:'5px'}}>{t.get150Pts}</span>}
+             📍 {isAdmin ? 'Bulawayo (Admin Access)' : t.showingPlugs.replace('{suburbs}', (unlockedList.join(', ') || 'your area'))}
+             {!isAdmin && user?.ubuntupoints < 150 && unlockedList.length === 1 && <span style={{marginLeft:'5px'}}>{t.get150Pts}</span>}
            </div>
            {hasUnusedUnlocks && (
              <button 
