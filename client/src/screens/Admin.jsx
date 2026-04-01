@@ -417,68 +417,178 @@ export default function Admin({ showToast }) {
         )}
 
         {activeTab === 'disputes' && (
-          <div className="asec">
-            <h3>⚖️ Open Disputes</h3>
-            <div className="admin-results">
-              {disputes.filter(d => d.status === 'open').map(d => (
-                 <div key={d.id} className="listing-card" style={{padding:'14px', borderLeft:'4px solid var(--red)'}}>
-                   <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
-                     <div style={{fontWeight:700, fontSize:'14px'}}>Dispute #{d.id}</div>
-                     <div style={{fontSize:'12px', background:'rgba(255,107,107,0.1)', color:'var(--red)', padding:'2px 8px', borderRadius:'8px', fontWeight:700}}>OPEN</div>
-                   </div>
-                   <div style={{fontSize:'13px', color:'var(--text-muted)'}}>Reporter: <span style={{color:'var(--text)', fontWeight:700}}>{d.reporterName}</span></div>
-                   <div style={{fontSize:'13px', color:'var(--text-muted)'}}>Reason: <span style={{color:'var(--amber)', fontWeight:700}}>{d.reason}</span></div>
-                   <div style={{fontSize:'12px', color:'var(--text)', background:'var(--surface2)', padding:'8px', borderRadius:'8px', marginTop:'8px', fontStyle:'italic'}}>
-                     "{d.statement}"
-                   </div>
-                   
-                   <div style={{marginTop:'12px', paddingTop:'12px', borderTop:'1px solid var(--border)'}}>
-                     <div style={{fontSize:'11px', fontWeight:700, color:'var(--text-muted)', marginBottom:'8px'}}>RESOLVE (AWARD OR DEDUCT 5 PTS)</div>
-                     
-                     <div style={{display:'flex', gap:'5px', marginBottom:'8px'}}>
-                       <div style={{flex:1, background:'var(--bg)', padding:'8px', borderRadius:'8px'}}>
-                         <div style={{fontSize:'12px', fontWeight:700}}>{d.seekerName} (Buyer)</div>
-                         <div style={{fontSize:'10px', color:'var(--text-muted)'}}>{d.seekerPhone}</div>
-                         <div style={{display:'flex', gap:'5px', marginTop:'5px'}}>
-                           <button className="btn-sm" style={{flex:1, padding:'4px', fontSize:'10px', background:'rgba(0,232,122,0.1)', color:'var(--green)', border:'1px solid var(--green)'}} onClick={() => resolveDispute(d.id, 'award', d.seekerid, d.providerid)}>Award</button>
-                           <button className="btn-sm" style={{flex:1, padding:'4px', fontSize:'10px', background:'rgba(255,107,107,0.1)', color:'var(--red)', border:'1px solid var(--red)'}} onClick={() => resolveDispute(d.id, 'deduct', d.seekerid, d.providerid)}>Deduct</button>
-                         </div>
-                       </div>
-                       
-                       <div style={{flex:1, background:'var(--bg)', padding:'8px', borderRadius:'8px'}}>
-                         <div style={{fontSize:'12px', fontWeight:700}}>{d.providerName} (Seller)</div>
-                         <div style={{fontSize:'10px', color:'var(--text-muted)'}}>{d.providerPhone}</div>
-                         <div style={{display:'flex', gap:'5px', marginTop:'5px'}}>
-                           <button className="btn-sm" style={{flex:1, padding:'4px', fontSize:'10px', background:'rgba(0,232,122,0.1)', color:'var(--green)', border:'1px solid var(--green)'}} onClick={() => resolveDispute(d.id, 'award', d.providerid, d.seekerid)}>Award</button>
-                           <button className="btn-sm" style={{flex:1, padding:'4px', fontSize:'10px', background:'rgba(255,107,107,0.1)', color:'var(--red)', border:'1px solid var(--red)'}} onClick={() => resolveDispute(d.id, 'deduct', d.providerid, d.seekerid)}>Deduct</button>
-                         </div>
-                       </div>
-                     </div>
-                     
-                     <div style={{display:'flex', gap:'10px'}}>
-                       <button className="btn-sm" style={{flex:1, justifyContent:'center', background:'rgba(255,184,0,0.1)', color:'var(--amber)', border:'none'}} onClick={() => joinDealChat({ id: d.dealid, buyerId: d.seekerid, sellerId: d.providerid })}>
-                         Inspect Chat 💬
-                       </button>
-                       <button className="btn-sm" style={{flex:1, justifyContent:'center', background:'var(--surface2)', color:'var(--text)', border:'1px solid var(--border)'}} onClick={() => resolveDispute(d.id, 'clear', null, null)}>
-                         Clear Issue (No Action)
-                       </button>
-                     </div>
-                   </div>
-                 </div>
-              ))}
-              {disputes.filter(d => d.status === 'open').length === 0 && <div style={{padding:'20px', textAlign:'center', color:'var(--text-muted)'}}>No open disputes right now.</div>}
-              {loadingDisputes && <div style={{padding:'20px', textAlign:'center'}}>Loading disputes...</div>}
-            </div>
+          <div style={{padding:'20px'}}>
+            <div style={{fontSize:'18px', fontWeight:800, marginBottom:'20px', fontFamily:'"Syne", sans-serif'}}>⚖️ Open Disputes</div>
             
-            <h3 style={{marginTop:'30px'}}>✅ Resolved Disputes</h3>
-            <div className="admin-results">
-              {disputes.filter(d => d.status === 'resolved').map(d => (
-                 <div key={d.id} className="listing-card" style={{padding:'14px', borderLeft:'4px solid var(--green)', opacity:0.7}}>
-                   <div style={{fontWeight:700, fontSize:'14px'}}>Dispute #{d.id} (Resolved)</div>
-                   <div style={{fontSize:'12px', color:'var(--text-muted)'}}>Against: Deal #{d.dealid} | Reason: {d.reason}</div>
-                 </div>
-              ))}
-            </div>
+            {loadingDisputes && <div style={{padding:'30px', textAlign:'center', color:'var(--text-muted)'}}>Loading disputes...</div>}
+            
+            {disputes.filter(d => d.status === 'open').length === 0 && !loadingDisputes && (
+              <div style={{padding:'40px 20px', textAlign:'center', background:'var(--surface)', borderRadius:'16px', border:'1px solid var(--border)'}}>
+                <div style={{fontSize:'40px', marginBottom:'10px'}}>✅</div>
+                <div style={{fontSize:'14px', color:'var(--text-muted)'}}>No open disputes right now.</div>
+              </div>
+            )}
+
+            {disputes.filter(d => d.status === 'open').map(d => (
+              <div key={d.id} style={{
+                background:'var(--surface)', 
+                borderRadius:'16px', 
+                border:'1px solid rgba(255,107,107,0.3)', 
+                marginBottom:'20px',
+                overflow:'hidden'
+              }}>
+                {/* Header */}
+                <div style={{
+                  padding:'14px 16px', 
+                  background:'rgba(255,107,107,0.08)', 
+                  borderBottom:'1px solid rgba(255,107,107,0.15)',
+                  display:'flex', justifyContent:'space-between', alignItems:'center'
+                }}>
+                  <div style={{fontWeight:800, fontSize:'15px'}}>🚩 Dispute #{d.id}</div>
+                  <div style={{fontSize:'11px', background:'rgba(255,107,107,0.15)', color:'var(--red)', padding:'3px 10px', borderRadius:'20px', fontWeight:800, letterSpacing:'0.5px'}}>OPEN</div>
+                </div>
+
+                {/* Details */}
+                <div style={{padding:'16px'}}>
+                  <div style={{marginBottom:'12px'}}>
+                    <div style={{fontSize:'11px', color:'var(--text-muted)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'4px'}}>Reported by</div>
+                    <div style={{fontSize:'14px', fontWeight:700}}>{d.reporterName}</div>
+                  </div>
+                  
+                  <div style={{marginBottom:'12px'}}>
+                    <div style={{fontSize:'11px', color:'var(--text-muted)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'4px'}}>Reason</div>
+                    <div style={{fontSize:'14px', fontWeight:700, color:'var(--amber)'}}>{d.reason}</div>
+                  </div>
+
+                  <div style={{
+                    background:'var(--bg)', 
+                    padding:'12px 14px', 
+                    borderRadius:'10px', 
+                    border:'1px solid var(--border)',
+                    fontSize:'13px', 
+                    color:'var(--text)', 
+                    fontStyle:'italic', 
+                    lineHeight:1.5
+                  }}>
+                    "{d.statement}"
+                  </div>
+                </div>
+
+                {/* Inspect Chat Button */}
+                <div style={{padding:'0 16px 12px'}}>
+                  <button 
+                    className="btn-sm" 
+                    style={{
+                      width:'100%', justifyContent:'center', 
+                      background:'rgba(255,184,0,0.1)', color:'var(--amber)', 
+                      border:'1px solid rgba(255,184,0,0.3)',
+                      padding:'10px', fontSize:'13px', fontWeight:700
+                    }} 
+                    onClick={() => joinDealChat({ id: d.dealid, buyerId: d.seekerid, sellerId: d.providerid })}
+                  >
+                    Inspect Chat 💬
+                  </button>
+                </div>
+
+                {/* Resolution Section */}
+                <div style={{
+                  padding:'16px', 
+                  background:'var(--bg)', 
+                  borderTop:'1px solid var(--border)'
+                }}>
+                  <div style={{fontSize:'11px', fontWeight:800, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'14px'}}>
+                    Resolve — Award or Deduct 5 pts
+                  </div>
+
+                  {/* Buyer Card */}
+                  <div style={{
+                    background:'var(--surface)', 
+                    border:'1px solid var(--border)', 
+                    borderRadius:'12px', 
+                    padding:'14px', 
+                    marginBottom:'10px'
+                  }}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px'}}>
+                      <div>
+                        <div style={{fontSize:'14px', fontWeight:700}}>{d.seekerName}</div>
+                        <div style={{fontSize:'11px', color:'var(--text-muted)'}}>Buyer · {d.seekerPhone}</div>
+                      </div>
+                      <div style={{fontSize:'10px', background:'rgba(0,150,255,0.1)', color:'#4da6ff', padding:'3px 8px', borderRadius:'20px', fontWeight:700}}>BUYER</div>
+                    </div>
+                    <div style={{display:'flex', gap:'8px'}}>
+                      <button className="btn-sm" style={{flex:1, padding:'8px', fontSize:'12px', fontWeight:700, background:'rgba(0,232,122,0.1)', color:'var(--green)', border:'1px solid var(--green)', borderRadius:'8px'}} onClick={() => resolveDispute(d.id, 'award', d.seekerid, d.providerid)}>
+                        +5 Award ✅
+                      </button>
+                      <button className="btn-sm" style={{flex:1, padding:'8px', fontSize:'12px', fontWeight:700, background:'rgba(255,107,107,0.1)', color:'var(--red)', border:'1px solid var(--red)', borderRadius:'8px'}} onClick={() => resolveDispute(d.id, 'deduct', d.seekerid, d.providerid)}>
+                        -5 Deduct ❌
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Seller Card */}
+                  <div style={{
+                    background:'var(--surface)', 
+                    border:'1px solid var(--border)', 
+                    borderRadius:'12px', 
+                    padding:'14px', 
+                    marginBottom:'14px'
+                  }}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px'}}>
+                      <div>
+                        <div style={{fontSize:'14px', fontWeight:700}}>{d.providerName}</div>
+                        <div style={{fontSize:'11px', color:'var(--text-muted)'}}>Seller · {d.providerPhone}</div>
+                      </div>
+                      <div style={{fontSize:'10px', background:'rgba(255,184,0,0.1)', color:'var(--amber)', padding:'3px 8px', borderRadius:'20px', fontWeight:700}}>SELLER</div>
+                    </div>
+                    <div style={{display:'flex', gap:'8px'}}>
+                      <button className="btn-sm" style={{flex:1, padding:'8px', fontSize:'12px', fontWeight:700, background:'rgba(0,232,122,0.1)', color:'var(--green)', border:'1px solid var(--green)', borderRadius:'8px'}} onClick={() => resolveDispute(d.id, 'award', d.providerid, d.seekerid)}>
+                        +5 Award ✅
+                      </button>
+                      <button className="btn-sm" style={{flex:1, padding:'8px', fontSize:'12px', fontWeight:700, background:'rgba(255,107,107,0.1)', color:'var(--red)', border:'1px solid var(--red)', borderRadius:'8px'}} onClick={() => resolveDispute(d.id, 'deduct', d.providerid, d.seekerid)}>
+                        -5 Deduct ❌
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Clear Button */}
+                  <button 
+                    className="btn-sm" 
+                    style={{
+                      width:'100%', justifyContent:'center', 
+                      background:'var(--surface2)', color:'var(--text-muted)', 
+                      border:'1px solid var(--border)',
+                      padding:'10px', fontSize:'12px', fontWeight:600
+                    }} 
+                    onClick={() => resolveDispute(d.id, 'clear', null, null)}
+                  >
+                    Clear Issue — No Points Changed
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* Resolved Section */}
+            <div style={{fontSize:'18px', fontWeight:800, marginTop:'30px', marginBottom:'16px', fontFamily:'"Syne", sans-serif'}}>✅ Resolved Disputes</div>
+            
+            {disputes.filter(d => d.status === 'resolved').length === 0 && (
+              <div style={{padding:'20px', textAlign:'center', color:'var(--text-muted)', fontSize:'13px'}}>No resolved disputes yet.</div>
+            )}
+
+            {disputes.filter(d => d.status === 'resolved').map(d => (
+              <div key={d.id} style={{
+                background:'var(--surface)', borderRadius:'12px', 
+                border:'1px solid rgba(0,232,122,0.2)', padding:'14px 16px', 
+                marginBottom:'10px', opacity:0.75
+              }}>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                  <div>
+                    <div style={{fontWeight:700, fontSize:'14px'}}>Dispute #{d.id}</div>
+                    <div style={{fontSize:'12px', color:'var(--text-muted)', marginTop:'2px'}}>Deal #{d.dealid} · {d.reason}</div>
+                  </div>
+                  <div style={{fontSize:'11px', background:'rgba(0,232,122,0.1)', color:'var(--green)', padding:'3px 10px', borderRadius:'20px', fontWeight:700}}>RESOLVED</div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
