@@ -206,7 +206,22 @@ export default function Detail({ showToast, t }) {
           </div>
 
           <div style={{display:'flex',gap:'9px', marginTop:'20px'}}>
-            <button className="btn-sm s" onClick={() => showToast('Listing saved!', 'success')}>💾 Save</button>
+            <button className="btn-sm s" onClick={() => {
+              const saved = JSON.parse(localStorage.getItem('plug_saved') || '[]');
+              const listingId = listing.id;
+              if (saved.includes(listingId)) {
+                const updated = saved.filter(id => id !== listingId);
+                localStorage.setItem('plug_saved', JSON.stringify(updated));
+                showToast('Removed from saved', 'success');
+              } else {
+                saved.push(listingId);
+                localStorage.setItem('plug_saved', JSON.stringify(saved));
+                showToast('Listing saved! Find it in My Plugs → Saved 💾', 'success');
+              }
+            }}>{(() => {
+              const saved = JSON.parse(localStorage.getItem('plug_saved') || '[]');
+              return saved.includes(listing.id) ? '✅ Saved' : '💾 Save';
+            })()} </button>
             <button className="btn-sm d" onClick={() => navigate('/dispute')}>🚩 Report</button>
           </div>
         </div>

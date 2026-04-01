@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 export default function Chat() {
   const { id } = useParams();
@@ -20,34 +21,20 @@ export default function Chat() {
 
     // Fetch messages
     const fetchMsgs = () => {
-      fetch(`/api/messages/${id}`)
+      fetch(`${API_BASE_URL}/api/messages/${id}`)
         .then(res => res.json())
         .then(data => setHistory(data))
         .catch(err => console.error(err));
     };
 
-    // Fetch deal info to show confirmation buttons
-    const fetchDeal = async () => {
-      try {
-        const res = await fetch(`/api/deals/${user.id}`);
-        const data = await res.json();
-        // Look for the deal linked to this chat's listingId
-        // We'll need chatInfo first to know listingId
-        if (Array.isArray(data)) {
-           // We'll fetch chatInfo below to match listingId
-        }
-      } catch (e) {}
-    };
-
     const fetchChatInfo = async () => {
        try {
-         const res = await fetch(`/api/chats/${user.id}`);
+         const res = await fetch(`${API_BASE_URL}/api/chats/${user.id}`);
          const data = await res.json();
          const thisChat = data.find(c => c.id == id);
          if (thisChat) {
            setChatInfo(thisChat);
-           // Now get deal for this listing
-           const dealsRes = await fetch(`/api/deals/${user.id}`);
+           const dealsRes = await fetch(`${API_BASE_URL}/api/deals/${user.id}`);
            const deals = await dealsRes.json();
            const match = deals.find(d => d.listingid == thisChat.listingId);
            if (match) setDeal(match);
@@ -57,7 +44,7 @@ export default function Chat() {
 
     fetchMsgs();
     fetchChatInfo();
-    const interval = setInterval(fetchMsgs, 3000); // Polling for now
+    const interval = setInterval(fetchMsgs, 3000);
 
     return () => clearInterval(interval);
   }, [id, navigate]);
@@ -66,7 +53,7 @@ export default function Chat() {
     setLoadingDeal(true);
     const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
     try {
-      const res = await fetch(`/api/deals/${deal.id}/confirm`, {
+      const res = await fetch(`${API_BASE_URL}/api/deals/${deal.id}/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, role })
@@ -91,7 +78,7 @@ export default function Chat() {
      const isBuyer = deal?.seekerid == user.id;
      const targetId = isBuyer ? deal.providerid : deal.seekerid;
      try {
-       await fetch('/api/reviews', {
+       await fetch(`${API_BASE_URL}/api/reviews`, {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({ dealid: deal.id, authorid: user.id, targetid: targetId, text: reviewText })
@@ -112,7 +99,7 @@ export default function Chat() {
     const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
     
     try {
-      const res = await fetch('/api/messages', {
+      const res = await fetch(`${API_BASE_URL}/api/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -136,6 +123,13 @@ export default function Chat() {
   const isBuyer = deal?.seekerid == user.id;
   const isSeller = deal?.providerid == user.id;
 
+  // Determine the other person's name
+  const otherPersonName = (() => {
+    if (!chatInfo) return 'Other';
+    if (chatInfo.buyerId === user.id) return chatInfo.sellerName || 'Seller';
+    return chatInfo.buyerName || 'Buyer';
+  })();
+
   return (
     <div className="screen active" style={{background:'var(--bg)', display:'flex', flexDirection:'column'}}>
       <div className="topbar">
@@ -143,7 +137,7 @@ export default function Chat() {
         <div style={{flex:1, marginLeft:'15px'}}>
           <div style={{fontSize:'15px', fontWeight:700}}>{chatInfo?.listingTitle || 'Chat Room'}</div>
           <div style={{fontSize:'11px', color: deal?.status === 'completed' ? 'var(--green)' : 'var(--amber)'}}>
-            {deal?.status === 'completed' ? 'Deal Sealed ✅' : (deal ? 'HONOR DEAL WITHIN 72H ⏳' : 'Inquiry')}
+            {deal?.status === 'completed' ? 'Deal Sealed ✅' : (deal ? 'HONOR DEAL WITHIN 72H ⏳' : `with ${otherPersonName}`)}
           </div>
         </div>
         <div></div>
@@ -192,7 +186,8 @@ export default function Chat() {
         </div>
       )}
 
-      <div className="scroll-area" ref={scrollRef} style={{padding:'20px', display:'flex', flexDirection:'column', gap:'12px', background:'var(--bg)', flex:1}}>
+      {/* Chat messages area */}
+      <div className="scroll-area" ref={scrollRef} style={{padding:'20px', display:'flex', flexDirection:'column', gap:'8px', background:'var(--bg)', flex:1}}>
         {history.length === 0 && (
           <div style={{textAlign:'center', color:'var(--text-muted)', fontSize:'13px', marginTop:'20px'}}>
             No messages yet. Send one to start the deal!
@@ -206,36 +201,127 @@ export default function Chat() {
           const isAdminAccount = roleToCheck === 'admin' || phoneToCheck === '263715198745' || phoneToCheck === '263775939688';
           const isParticipant = (Number(chatInfo?.buyerId) === Number(m.senderId) || Number(chatInfo?.sellerId) === Number(m.senderId));
           const renderAsAdmin = isAdminAccount && !isParticipant;
+
+          const senderName = m.senderName || (isSender ? user.fullname : otherPersonName);
+          const initial = senderName?.charAt(0)?.toUpperCase() || '?';
           
+          // Show date separator if needed
+          const showDateSep = i === 0 || (() => {
+            try {
+              const prevDate = new Date(history[i-1].createdAt || history[i-1].createdat).toDateString();
+              const curDate = new Date(m.createdAt || m.createdat).toDateString();
+              return prevDate !== curDate;
+            } catch(e) { return false; }
+          })();
+
           return (
-          <div key={i} style={{
-            maxWidth:'80%',
-            padding:'12px 16px',
-            borderRadius:'18px',
-            fontSize:'14px',
-            lineHeight:1.5,
-            alignSelf: renderAsAdmin ? 'center' : (isSender ? 'flex-end' : 'flex-start'),
-            background: renderAsAdmin ? 'rgba(255, 69, 58, 0.15)' : (isSender ? 'var(--green)' : 'var(--surface2)'),
-            color: renderAsAdmin ? 'var(--red)' : (isSender ? '#000' : 'var(--text)'),
-            border: renderAsAdmin ? '1px solid var(--red)' : (isSender ? 'none' : '1px solid var(--border)'),
-            borderBottomRightRadius: renderAsAdmin ? '18px' : (isSender ? '4px' : '18px'),
-            borderBottomLeftRadius: renderAsAdmin ? '18px' : (!isSender ? '4px' : '18px'),
-            width: renderAsAdmin ? '100%' : 'auto',
-            textAlign: renderAsAdmin ? 'center' : 'left'
-          }}>
-            {renderAsAdmin ? (
-               <div style={{fontSize:'11px', fontWeight:800, marginBottom:'4px', color:'var(--red)'}}>🚨 ADMIN</div>
-            ) : (
-               <div style={{fontSize:'10px', fontWeight:700, marginBottom:'4px', opacity:0.6}}>
-                 {m.senderName || (isSender ? user.fullname : 'Other')}
-               </div>
-            )}
-            <div>{m.text}</div>
-            <div style={{fontSize:'10px', marginTop:'4px', opacity:0.6, textAlign: renderAsAdmin ? 'center' : 'right'}}>
-              {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+            <div key={i}>
+              {/* Date separator */}
+              {showDateSep && (
+                <div style={{
+                  textAlign:'center', margin:'12px 0',
+                  fontSize:'10px', color:'var(--text-dim)',
+                  display:'flex', alignItems:'center', gap:'10px'
+                }}>
+                  <div style={{flex:1, height:'1px', background:'var(--border)'}} />
+                  <span style={{padding:'3px 12px', background:'var(--surface2)', borderRadius:'100px', border:'1px solid var(--border)'}}>
+                    {(() => {
+                      try { 
+                        const d = new Date(m.createdAt || m.createdat);
+                        const today = new Date();
+                        if (d.toDateString() === today.toDateString()) return 'Today';
+                        const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+                        if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+                        return d.toLocaleDateString([], {month:'short', day:'numeric'});
+                      } catch(e) { return ''; }
+                    })()}
+                  </span>
+                  <div style={{flex:1, height:'1px', background:'var(--border)'}} />
+                </div>
+              )}
+
+              {/* Admin message */}
+              {renderAsAdmin ? (
+                <div style={{
+                  maxWidth:'90%',
+                  padding:'10px 16px',
+                  borderRadius:'12px',
+                  fontSize:'13px',
+                  lineHeight:1.5,
+                  alignSelf:'center',
+                  background:'rgba(255, 69, 58, 0.1)',
+                  color:'var(--red)',
+                  border:'1px solid rgba(255,59,59,0.2)',
+                  width:'100%',
+                  textAlign:'center'
+                }}>
+                  <div style={{fontSize:'10px', fontWeight:800, marginBottom:'4px', color:'var(--red)'}}>🚨 ADMIN</div>
+                  <div>{m.text}</div>
+                  <div style={{fontSize:'10px', marginTop:'4px', opacity:0.6}}>
+                    {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                  </div>
+                </div>
+              ) : (
+                /* Regular message with avatar distinction */
+                <div style={{
+                  display:'flex',
+                  flexDirection: isSender ? 'row-reverse' : 'row',
+                  alignItems:'flex-end',
+                  gap:'8px',
+                  alignSelf: isSender ? 'flex-end' : 'flex-start',
+                  maxWidth:'85%'
+                }}>
+                  {/* Avatar for received messages */}
+                  {!isSender && (
+                    <div style={{
+                      width:'28px', height:'28px', borderRadius:'50%',
+                      background:'rgba(123,97,255,0.15)', border:'1px solid rgba(123,97,255,0.3)',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      fontSize:'12px', fontWeight:800, color:'#7B61FF',
+                      fontFamily:'"Syne", sans-serif', flexShrink:0
+                    }}>
+                      {initial}
+                    </div>
+                  )}
+
+                  {/* Bubble */}
+                  <div style={{
+                    padding:'10px 14px',
+                    borderRadius: isSender ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                    fontSize:'14px',
+                    lineHeight:1.5,
+                    background: isSender 
+                      ? 'linear-gradient(135deg, #00E87A, #00C868)' 
+                      : 'var(--surface2)',
+                    color: isSender ? '#000' : 'var(--text)',
+                    border: isSender ? 'none' : '1px solid var(--border)',
+                    boxShadow: isSender 
+                      ? '0 2px 8px rgba(0,232,122,0.2)' 
+                      : '0 1px 4px rgba(0,0,0,0.1)'
+                  }}>
+                    {/* Name label */}
+                    <div style={{
+                      fontSize:'10px', fontWeight:700, marginBottom:'3px',
+                      opacity: 0.7,
+                      color: isSender ? 'rgba(0,0,0,0.6)' : 'var(--green)'
+                    }}>
+                      {isSender ? 'You' : senderName}
+                    </div>
+                    
+                    <div>{m.text}</div>
+                    
+                    <div style={{
+                      fontSize:'10px', marginTop:'4px', 
+                      opacity:0.5, textAlign:'right'
+                    }}>
+                      {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )})}
+          );
+        })}
       </div>
 
       {(isVerified || deal) ? (
@@ -320,4 +406,3 @@ export default function Chat() {
     </div>
   );
 }
-

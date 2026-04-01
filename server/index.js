@@ -416,6 +416,13 @@ app.post('/api/notifications/read/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+app.delete('/api/notifications/:id', async (req, res) => {
+  try {
+    await db.query('DELETE FROM notifications WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ==== Deals & Trade Confirmation ====
 app.get('/api/deals/:userId', async (req, res) => {
   try {

@@ -1,0 +1,18 @@
+--- Page 1 ---
+1. Fig 1 : I NEED YOU TO REDISIGN THIS SCREEN IT LOOKS UGLY. AND I WAS THINKING I SHOULD
+ONLY SEE BIDS THAT HAVE BEEN WON WHEN THE BID HAS ENDED. ALSO I THINK THERE
+SHOULD BE A NUMBER NEXT TO THE BID THAT WAY I CAN SEE WHAT IM WORKING WITH FOR
+
+--- Page 2 ---
+EXAMPLE BID 1,BID 2 ETC.AND THERE SHOULD BE A DELETE OPTION SO THAT I CAN REMOVE
+BIDS THAT HAVE BEEN VERIFIED.
+2. Fig2 : here i want you to redisign this and make it nice i was thinking the image of the product,
+time remaining, number of bids on it and the bid amount the thing is on should be visible and
+when a person saves a bid they should show up here.
+
+--- Page 3 ---
+3. Also there shoud be a way to remove each notification one by one from notifications.
+4.
+Fig3 : here the messages look like they are from one person or the same deal cant we create a
+look that does not confuse the viewer
+
