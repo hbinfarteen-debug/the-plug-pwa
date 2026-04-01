@@ -108,6 +108,30 @@ export default function Admin({ showToast }) {
     }
   };
 
+  const startSupportChat = async (user) => {
+    const admin = JSON.parse(localStorage.getItem('plug_user') || '{}');
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/chats`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingId: null,
+          buyerId: user.id,
+          sellerId: admin.id,
+          type: 'support'
+        })
+      });
+      const data = await res.json();
+      if (data.id) {
+        navigate(`/chat/${data.id}`);
+      } else {
+        showToast('Could not start support chat', 'error');
+      }
+    } catch (e) {
+      showToast('Error starting support chat', 'error');
+    }
+  };
+
   const joinDealChat = async (bid) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/chats`, {
@@ -363,21 +387,30 @@ export default function Admin({ showToast }) {
                        {u.ubuntupoints} pts {((u.ubuntu_points_lost || u.ubuntupoints_lost) > 0) && <span style={{color:'var(--red)'}}>({u.ubuntu_points_lost || u.ubuntupoints_lost} lost)</span>}
                      </div>
                   </div>
-                  <button 
-                    className="btn-sm" 
-                    style={{
-                      background: u.blacklisted ? 'var(--green)' : 'rgba(255,107,107,0.1)', 
-                      color: u.blacklisted ? '#000' : 'var(--red)',
-                      border: u.blacklisted ? 'none' : '1px solid rgba(255,107,107,0.3)',
-                      minWidth: '100px'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleBlacklist(u.id, u.blacklisted);
-                    }}
-                  >
-                    {u.blacklisted ? 'Reinstate' : 'Suspend'}
-                  </button>
+                  <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
+                    <button 
+                      className="btn-sm" 
+                      style={{background:'rgba(123,97,255,0.1)', color:'#7B61FF', border:'1px solid rgba(123,97,255,0.3)'}}
+                      onClick={(e) => { e.stopPropagation(); startSupportChat(u); }}
+                    >
+                      💬 Support
+                    </button>
+                    <button 
+                      className="btn-sm" 
+                      style={{
+                        background: u.blacklisted ? 'var(--green)' : 'rgba(255,107,107,0.1)', 
+                        color: u.blacklisted ? '#000' : 'var(--red)',
+                        border: u.blacklisted ? 'none' : '1px solid rgba(255,107,107,0.3)',
+                        minWidth: '100px'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleBlacklist(u.id, u.blacklisted);
+                      }}
+                    >
+                      {u.blacklisted ? 'Reinstate' : 'Suspend'}
+                    </button>
+                  </div>
                 </div>
               ))}
               {loadingUsers && <div style={{padding:'20px', textAlign:'center'}}>Loading users...</div>}

@@ -61,10 +61,15 @@ export default function Chat() {
       const data = await res.json();
       if (res.ok) {
         setDeal(data.deal);
-        alert('You successfully gifted 5 Ubuntu Points to the other user! 🎁');
+        showToast('You successfully gifted 5 Ubuntu Points to the other user! 🎁', 'success');
         setShowReviewModal(true);
+      } else {
+        showToast(data.error || 'Failed to confirm deal', 'error');
       }
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+      console.error(e);
+      showToast('Error confirming trade', 'error');
+    }
     setLoadingDeal(false);
   };
 
@@ -135,9 +140,9 @@ export default function Chat() {
       <div className="topbar">
         <div style={{cursor:'pointer',fontSize:'20px'}} onClick={()=>navigate(-1)}>‹</div>
         <div style={{flex:1, marginLeft:'15px'}}>
-          <div style={{fontSize:'15px', fontWeight:700}}>{chatInfo?.listingTitle || 'Chat Room'}</div>
-          <div style={{fontSize:'11px', color: deal?.status === 'completed' ? 'var(--green)' : 'var(--amber)'}}>
-            {deal?.status === 'completed' ? 'Deal Sealed ✅' : (deal ? 'HONOR DEAL WITHIN 72H ⏳' : `with ${otherPersonName}`)}
+          <div style={{fontSize:'15px', fontWeight:700}}>{chatInfo?.type === 'support' ? '🛡️ Admin Support' : (chatInfo?.listingTitle || 'Chat Room')}</div>
+          <div style={{fontSize:'11px', color: chatInfo?.type === 'support' ? 'var(--green)' : (deal?.status === 'completed' ? 'var(--green)' : (deal ? 'HONOR DEAL WITHIN 72H ⏳' : `with ${otherPersonName}`))}}>
+            {chatInfo?.type === 'support' ? 'Official Support Channel' : (deal?.status === 'completed' ? 'Deal Sealed ✅' : (deal ? 'HONOR DEAL WITHIN 72H ⏳' : `with ${otherPersonName}`))}
           </div>
         </div>
         <div></div>
@@ -297,22 +302,24 @@ export default function Chat() {
                     border: isSender ? 'none' : '1px solid var(--border)',
                     boxShadow: isSender 
                       ? '0 2px 8px rgba(0,232,122,0.2)' 
-                      : '0 1px 4px rgba(0,0,0,0.1)'
+                      : '0 1px 4px rgba(0,0,0,0.1)',
+                    textAlign: isSender ? 'right' : 'left'
                   }}>
                     {/* Name label */}
                     <div style={{
                       fontSize:'10px', fontWeight:700, marginBottom:'3px',
                       opacity: 0.7,
-                      color: isSender ? 'rgba(0,0,0,0.6)' : 'var(--green)'
+                      color: isSender ? 'rgba(0,0,0,0.4)' : 'var(--green)',
+                      textAlign: isSender ? 'right' : 'left'
                     }}>
                       {isSender ? 'You' : senderName}
                     </div>
                     
-                    <div>{m.text}</div>
+                    <div style={{textAlign: isSender ? 'right' : 'left'}}>{m.text}</div>
                     
                     <div style={{
                       fontSize:'10px', marginTop:'4px', 
-                      opacity:0.5, textAlign:'right'
+                      opacity:0.5, textAlign: isSender ? 'right' : 'left'
                     }}>
                       {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
                     </div>

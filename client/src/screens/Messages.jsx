@@ -88,10 +88,13 @@ export default function Messages() {
           <div style={{padding:'6px 16px'}}>
             {chats.map((chat, idx) => {
               const currentUser = JSON.parse(localStorage.getItem('plug_user') || '{}');
-              const otherName = chat.buyerId === currentUser.id ? chat.sellerName : chat.buyerName;
+              const isSupport = chat.type === 'support';
+              const otherName = isSupport ? 'Official Support' : (chat.buyerId === currentUser.id ? chat.sellerName : chat.buyerName);
               const isBuyer = chat.buyerId === currentUser.id;
-              const colorSet = stringToColor(otherName || String(chat.id));
-              const initial = otherName?.charAt(0).toUpperCase() || '?';
+              const colorSet = isSupport 
+                ? { bg: 'rgba(255, 69, 58, 0.1)', text: 'var(--red)', border: 'rgba(255, 69, 58, 0.3)' }
+                : stringToColor(otherName || String(chat.id));
+              const initial = isSupport ? 'AD' : (otherName?.charAt(0).toUpperCase() || '?');
               const timeAgo = formatTimeAgo(chat.updatedAt);
 
               return (
@@ -102,7 +105,7 @@ export default function Messages() {
                     marginBottom:'10px',
                     background:'var(--surface)',
                     border: `1px solid var(--border)`,
-                    borderLeft: `4px solid ${colorSet.text}`,
+                    borderLeft: `4px solid ${isSupport ? 'var(--red)' : colorSet.text}`,
                     borderRadius:'14px',
                     display:'flex',
                     alignItems:'center',
@@ -123,16 +126,30 @@ export default function Messages() {
                   }}>
                     {initial}
                     {/* Role indicator dot */}
-                    <div style={{
-                      position:'absolute', bottom:'-2px', right:'-2px',
-                      width:'14px', height:'14px', borderRadius:'50%',
-                      background: isBuyer ? 'var(--amber)' : 'var(--green)',
-                      border:'2px solid var(--surface)',
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      fontSize:'7px'
-                    }}>
-                      {isBuyer ? '🛒' : '🔌'}
-                    </div>
+                    {!isSupport && (
+                      <div style={{
+                        position:'absolute', bottom:'-2px', right:'-2px',
+                        width:'14px', height:'14px', borderRadius:'50%',
+                        background: isBuyer ? 'var(--amber)' : 'var(--green)',
+                        border:'2px solid var(--surface)',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        fontSize:'7px'
+                      }}>
+                        {isBuyer ? '🛒' : '🔌'}
+                      </div>
+                    )}
+                    {isSupport && (
+                      <div style={{
+                        position:'absolute', bottom:'-2px', right:'-2px',
+                        width:'14px', height:'14px', borderRadius:'50%',
+                        background: 'var(--red)',
+                        border:'2px solid var(--surface)',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        fontSize:'7px'
+                      }}>
+                        🛡️
+                      </div>
+                    )}
                   </div>
 
                   {/* Chat info */}
@@ -150,11 +167,11 @@ export default function Messages() {
                     {/* Listing context - highlighted separately */}
                     <div style={{
                       fontSize:'11px', fontWeight:700, marginBottom:'3px',
-                      color: colorSet.text,
+                      color: isSupport ? 'var(--red)' : colorSet.text,
                       display:'flex', alignItems:'center', gap:'4px'
                     }}>
-                      <span style={{opacity:0.7}}>{isBuyer ? '🛒' : '🔌'}</span>
-                      Re: {chat.listingTitle || 'General Inquiry'}
+                      <span style={{opacity:0.7}}>{isSupport ? '🛡️' : (isBuyer ? '🛒' : '🔌')}</span>
+                      {isSupport ? 'The Plug Admin' : `Re: ${chat.listingTitle || 'General Inquiry'}`}
                     </div>
                     
                     {/* Last message */}

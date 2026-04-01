@@ -103,6 +103,7 @@ function initSqlite() {
         listingid INTEGER REFERENCES listings(id),
         buyerid INTEGER REFERENCES users(id),
         sellerid INTEGER REFERENCES users(id),
+        type TEXT DEFAULT 'deal',
         lastmsg TEXT,
         updatedat TEXT DEFAULT (datetime('now'))
       )`);
@@ -154,6 +155,7 @@ function initSqlite() {
         sqliteDb.run(`ALTER TABLE deals ADD COLUMN seller_confirmed INTEGER DEFAULT 0`, (err) => {});
         sqliteDb.run(`ALTER TABLE deals ADD COLUMN expires_at TEXT`, (err) => {});
         sqliteDb.run(`ALTER TABLE deals ADD COLUMN points_deducted INTEGER DEFAULT 0`, (err) => {});
+        sqliteDb.run(`ALTER TABLE chats ADD COLUMN type TEXT DEFAULT 'deal'`, (err) => {});
       });
 
       console.log('SQLite Schema Initialized');
@@ -277,6 +279,7 @@ if (USE_POSTGRES) {
           listingid INTEGER REFERENCES listings(id),
           buyerid INTEGER REFERENCES users(id),
           sellerid INTEGER REFERENCES users(id),
+          type TEXT DEFAULT 'deal',
           lastmsg TEXT,
           updatedat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -333,6 +336,7 @@ if (USE_POSTGRES) {
         await client.query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS seller_confirmed BOOLEAN DEFAULT false`);
         await client.query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP`);
         await client.query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS points_deducted BOOLEAN DEFAULT false`);
+        await client.query(`ALTER TABLE chats ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'deal'`);
       } catch (e) {
         console.error('Migration notice:', e.message);
       }

@@ -607,6 +607,7 @@ app.get('/api/chats/:userId', async (req, res) => {
              chats.listingid as "listingId",
              chats.buyerid as "buyerId",
              chats.sellerid as "sellerId",
+             chats.type,
              chats.lastmsg as "lastMsg",
              chats.updatedat as "updatedAt",
              u1.fullname as "buyerName", 
@@ -626,21 +627,30 @@ app.get('/api/chats/:userId', async (req, res) => {
 });
 
 app.post('/api/chats', async (req, res) => {
-  const { listingId, buyerId, sellerId } = req.body;
+  const { listingId, buyerId, sellerId, type } = req.body;
+  const chatType = type || 'deal';
   try {
     // Check if chat exists
-    const existing = await db.query(
-      'SELECT id FROM chats WHERE listingid = $1 AND buyerid = $2 AND sellerid = $3',
-      [listingId, buyerId, sellerId]
-    );
+    let existing;
+    if (chatType === 'support') {
+      existing = await db.query(
+        'SELECT id FROM chats WHERE type = $1 AND ((buyerid = $2 AND sellerid = $3) OR (buyerid = $3 AND sellerid = $2))',
+        ['support', buyerId, sellerId]
+      );
+    } else {
+      existing = await db.query(
+        'SELECT id FROM chats WHERE listingid = $1 AND buyerid = $2 AND sellerid = $3 AND type = $4',
+        [listingId, buyerId, sellerId, 'deal']
+      );
+    }
     
     if (existing.rows.length > 0) {
       return res.json(existing.rows[0]);
     }
 
     const result = await db.query(
-      'INSERT INTO chats (listingid, buyerid, sellerid) VALUES ($1, $2, $3) RETURNING id',
-      [listingId, buyerId, sellerId]
+      'INSERT INTO chats (listingid, buyerid, sellerid, type) VALUES ($1, $2, $3, $4) RETURNING id',
+      [listingId || null, buyerId, sellerId, chatType]
     );
     res.json(result.rows[0]);
   } catch (err) {
