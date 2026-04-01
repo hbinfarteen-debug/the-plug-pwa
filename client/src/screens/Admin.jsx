@@ -301,7 +301,9 @@ export default function Admin({ showToast }) {
                   <div style={{flex:1}}>
                      <div style={{fontWeight:700, fontSize:'14px'}}>{u.fullname} {u.blacklisted && <span style={{color:'var(--red)', fontSize:'10px'}}>SUSPENDED</span>}</div>
                      <div style={{fontSize:'12px', color:'var(--text-muted)'}}>+{u.phone} · {u.homebase}</div>
-                     <div style={{fontSize:'11px', color:'var(--green)', fontWeight:700}}>{u.ubuntupoints} pts</div>
+                     <div style={{fontSize:'11px', color:'var(--green)', fontWeight:700}}>
+                       {u.ubuntupoints} pts {((u.ubuntu_points_lost || u.ubuntupoints_lost) > 0) && <span style={{color:'var(--red)'}}>({u.ubuntu_points_lost || u.ubuntupoints_lost} lost)</span>}
+                     </div>
                   </div>
                   <button 
                     className="btn-sm" 

@@ -138,7 +138,7 @@ export default function Detail({ showToast, t }) {
           <div className="dprice">
             ${listing.bids && listing.bids.length > 0 
               ? Number(listing.bids[0].amount || 0).toFixed(2) 
-              : Number(listing.price || 0).toFixed(2)} 
+              : (listing.type === 'item' ? Number(0).toFixed(2) : Number(listing.price || 0).toFixed(2))} 
             <span>{listing.type === 'item' ? 'current bid' : 'gig'}</span>
           </div>
           <div className="seller-row" onClick={() => navigate(`/profile/${listing?.posterId}`)}>

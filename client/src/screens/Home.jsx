@@ -101,7 +101,7 @@ export default function Home({ showToast, t }) {
         ? JSON.parse(user.unlockedSuburbs) 
         : (user?.unlockedSuburbs || []);
       
-      const combined = Array.from(new Set([user?.homeBase || user?.homebase, ...list])).filter(Boolean);
+      const combined = Array.from(new Set([user?.homeBase || user?.homebase, 'CBD', ...list])).filter(Boolean);
       return combined;
     } catch(e) {
       return [user?.homeBase || user?.homebase].filter(Boolean);

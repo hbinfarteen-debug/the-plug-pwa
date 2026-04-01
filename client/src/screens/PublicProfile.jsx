@@ -63,51 +63,51 @@ export default function PublicProfile({ showToast }) {
           </div>
         </div>
 
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="num">12</div>
-            <div className="lbl">Sold</div>
+        {user?.stats?.sold > 0 && (
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="num">{user.stats.sold || 0}</div>
+              <div className="lbl">Sold</div>
+            </div>
+            <div className="stat-card">
+              <div className="num">{user.stats.active || 0}</div>
+              <div className="lbl">Active</div>
+            </div>
+            <div className="stat-card">
+              <div className="num">{user.stats.successRate || 100}%</div>
+              <div className="lbl">Success</div>
+            </div>
           </div>
-          <div className="stat-card">
-            <div className="num">4</div>
-            <div className="lbl">Active</div>
-          </div>
-          <div className="stat-card">
-            <div className="num">100%</div>
-            <div className="lbl">Success</div>
-          </div>
-        </div>
+        )}
 
         <div className="section-header">
           <div className="section-title">Ubuntu Badges</div>
         </div>
         <div className="badges-row">
           <div className="badge-chip">🤝 Early Adopter</div>
-          <div className="badge-chip green">⚡ Fast Responder</div>
+          {(user?.chatsCount >= 10 || user?.chat_count >= 10 || user?.chatCount >= 10) && <div className="badge-chip green">⚡ Fast Responder</div>}
           <div className="badge-chip">📍 {user.homeBase || user.homebase || 'Local'} Zone</div>
         </div>
 
         <div className="section-header">
           <div className="section-title">Recent Feedback</div>
         </div>
-        <div className="reviews-list">
-          <div className="review-item">
-            <div className="review-header">
-              <span className="review-name">Sipho M.</span>
-              <span className="review-pts">+5 pts</span>
-            </div>
-            <p className="review-text">Great seller, PS3 was as described. Straight to the point.</p>
-            <div className="review-date">2 days ago</div>
+        {user?.reviews && user.reviews.length > 0 ? (
+          <div className="reviews-list">
+            {user.reviews.map((r, i) => (
+              <div key={i} className="review-item" style={i === user.reviews.length - 1 ? {borderBottom:'none'} : {}}>
+                <div className="review-header">
+                  <span className="review-name">{r.author}</span>
+                  <span className="review-pts">+{r.points || 5} pts</span>
+                </div>
+                <p className="review-text">{r.comment}</p>
+                <div className="review-date">{r.date || 'Recent'}</div>
+              </div>
+            ))}
           </div>
-          <div className="review-item" style={{borderBottom:'none'}}>
-            <div className="review-header">
-              <span className="review-name">Nomsa D.</span>
-              <span className="review-pts">+5 pts</span>
-            </div>
-            <p className="review-text">Helpful and on time. Would trade again!</p>
-            <div className="review-date">1 week ago</div>
-          </div>
-        </div>
+        ) : (
+          <div style={{padding:'20px', textAlign:'center', color:'var(--text-muted)'}}>No reviews yet.</div>
+        )}
 
         <div style={{padding:'20px'}}>
              <button className="btn-primary" style={{width:'100%', justifyContent:'center'}} onClick={() => navigate(`/chat/${id}`)}>Message Plug 💬</button>

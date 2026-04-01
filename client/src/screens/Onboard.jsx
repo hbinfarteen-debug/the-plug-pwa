@@ -230,6 +230,11 @@ export default function Onboard({ showToast, t, language, setLanguage }) {
             </div>
             <button className="btn-primary" onClick={()=>{
               if(!suburb) return showToast('Please select a neighborhood!', 'error');
+              if(suburb === 'CBD' || suburb.toUpperCase() === 'CBD') {
+                 showToast('CBD is free for everyone! Please choose another neighborhood as your home base.', 'info');
+                 setSuburb('');
+                 return;
+              }
               nxt(5);
             }} style={{alignSelf:'flex-start',marginTop:'14px'}}>Confirm ›</button>
           </div>

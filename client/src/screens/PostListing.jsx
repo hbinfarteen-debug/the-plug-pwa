@@ -151,6 +151,7 @@ export default function PostListing({ showToast }) {
               <option value="Vehicle Services">🚗 Vehicle Services</option>
               <option value="Cleaning">🧹 Cleaning</option>
               <option value="Food & Catering">🍕 Food & Catering</option>
+              <option value="Cosmetics">💄 Cosmetics</option>
             </select>
           </div>
           
@@ -178,7 +179,7 @@ export default function PostListing({ showToast }) {
                   const unlocked = typeof u.unlockedSuburbs === 'string' 
                     ? JSON.parse(u.unlockedSuburbs || '[]') 
                     : (u.unlockedSuburbs || []);
-                  pool = Array.from(new Set([home, ...unlocked])).filter(Boolean);
+                  pool = Array.from(new Set([home, 'CBD', ...unlocked])).filter(Boolean);
                 }
 
                 if (locationSearch) {
