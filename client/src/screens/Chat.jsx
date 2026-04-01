@@ -11,6 +11,8 @@ export default function Chat() {
 
   const [deal, setDeal] = useState(null);
   const [loadingDeal, setLoadingDeal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewText, setReviewText] = useState('');
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
@@ -72,13 +74,31 @@ export default function Chat() {
       const data = await res.json();
       if (res.ok) {
         setDeal(data.deal);
-        if (data.deal.status === 'completed') {
-           // showToast handled via parent but internal alert for now
-           alert('Deal Completed! +5 Ubuntu Points awarded! 🏆');
-        }
+        alert('You successfully gifted 5 Ubuntu Points to the other user! 🎁');
+        setShowReviewModal(true);
       }
     } catch(e) { console.error(e); }
     setLoadingDeal(false);
+  };
+
+  const submitReview = async () => {
+     if(!reviewText.trim()) {
+        setShowReviewModal(false);
+        return;
+     }
+     setLoadingDeal(true);
+     const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
+     const isBuyer = deal?.seekerid == user.id;
+     const targetId = isBuyer ? deal.providerid : deal.seekerid;
+     try {
+       await fetch('/api/reviews', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ dealid: deal.id, authorid: user.id, targetid: targetId, text: reviewText })
+       });
+     } catch(e){}
+     setLoadingDeal(false);
+     setShowReviewModal(false);
   };
 
   useEffect(() => {
@@ -132,7 +152,7 @@ export default function Chat() {
       {deal && deal.status !== 'completed' && (
         <div style={{padding:'12px 20px', background:'rgba(255,184,0,0.1)', borderBottom:'1px solid rgba(255,184,0,0.2)'}}>
            <div style={{fontSize:'13px', fontWeight:700, marginBottom:'6px', color:'var(--amber)', textAlign:'center'}}>Ready to seal the trade?</div>
-           <div style={{fontSize:'11px', color:'var(--text-muted)', marginBottom:'10px', textAlign:'center'}}>Only agree to a done deal if the deal is completed. Earn 5 Ubuntu points!</div>
+           <div style={{fontSize:'11px', color:'var(--text-muted)', marginBottom:'10px', textAlign:'center'}}>Only agree to a done deal if the deal is completed. Gift 5 Ubuntu points!</div>
            
            <div style={{display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap'}}>
               {isBuyer ? (
@@ -230,6 +250,50 @@ export default function Chat() {
           </a>
         </div>
       )}
+
+      {showReviewModal && (
+        <div style={{
+          position:'fixed', inset:0, background:'rgba(0,0,0,0.85)',
+          display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:'20px'
+        }}>
+          <div style={{
+            background:'var(--surface)', borderRadius:'24px',
+            padding:'24px', width:'100%', maxWidth:'400px',
+            boxShadow:'0 10px 40px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{textAlign:'center', marginBottom:'20px'}}>
+              <h3 style={{margin:0, fontFamily:'"Syne", sans-serif'}}>Leave a Review</h3>
+              <p style={{fontSize:'12px', color:'var(--text-muted)'}}>Rate the other person's reliability! (Optional)</p>
+            </div>
+            <textarea 
+              className="field-input" 
+              placeholder="They were on time, great communication..." 
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              style={{height:'100px', width:'100%', marginBottom:'15px'}}
+            ></textarea>
+
+            <button 
+              className="btn-primary" 
+              style={{width:'100%', justifyContent:'center'}}
+              onClick={submitReview}
+              disabled={loadingDeal}
+            >
+               {loadingDeal ? 'Submitting...' : 'Post Review'}
+            </button>
+            <button
+              onClick={() => setShowReviewModal(false)}
+              style={{
+                width:'100%', background:'none', border:'none',
+                color:'var(--text-muted)', fontSize:'14px', cursor:'pointer', padding:'15px 0 0'
+              }}
+            >
+              Skip
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

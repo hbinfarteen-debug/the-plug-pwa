@@ -10,11 +10,13 @@ export default function Admin({ showToast }) {
   const [searching, setSearching] = useState(false);
   const [pendingPayments, setPendingPayments] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
-  const [activeTab, setActiveTab] = useState('commander'); // commander, users, deals
+  const [activeTab, setActiveTab] = useState('commander'); // commander, users, deals, disputes
   const [allUsers, setAllUsers] = useState([]);
   const [wonBids, setWonBids] = useState([]);
+  const [disputes, setDisputes] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingBids, setLoadingBids] = useState(false);
+  const [loadingDisputes, setLoadingDisputes] = useState(false);
   const [sanitizing, setSanitizing] = useState(false);
 
   useEffect(() => {
@@ -38,7 +40,34 @@ export default function Admin({ showToast }) {
     fetchPendingPayments();
     fetchAllUsers();
     fetchWonBids();
+    fetchDisputes();
   }, []);
+
+  const fetchDisputes = async () => {
+    setLoadingDisputes(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/disputes`, { headers: { 'x-admin-key': sessionStorage.getItem('admin_key') || '' } });
+      const data = await res.json();
+      setDisputes(Array.isArray(data) ? data : []);
+    } catch (e) { console.error(e); }
+    setLoadingDisputes(false);
+  };
+
+  const resolveDispute = async (disputeId, action, targetId, otherId) => {
+    try {
+       const res = await fetch(`${API_BASE_URL}/api/admin/disputes/${disputeId}/resolve`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json', 'x-admin-key': sessionStorage.getItem('admin_key') || '' },
+         body: JSON.stringify({ action, targetId, otherId })
+       });
+       if (res.ok) {
+          showToast(`Dispute resolved (${action})`, 'success');
+          fetchDisputes(); 
+       }
+    } catch (e) {
+       showToast('Error resolving dispute', 'error');
+    }
+  };
 
   const fetchAllUsers = async () => {
     setLoadingUsers(true);
@@ -376,6 +405,72 @@ export default function Admin({ showToast }) {
               ))}
               {wonBids.length === 0 && <div style={{padding:'20px', textAlign:'center', color:'var(--text-muted)'}}>No bids recorded yet.</div>}
               {loadingBids && <div style={{padding:'20px', textAlign:'center'}}>Loading bids...</div>}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'disputes' && (
+          <div className="asec">
+            <h3>⚖️ Open Disputes</h3>
+            <div className="admin-results">
+              {disputes.filter(d => d.status === 'open').map(d => (
+                 <div key={d.id} className="listing-card" style={{padding:'14px', borderLeft:'4px solid var(--red)'}}>
+                   <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
+                     <div style={{fontWeight:700, fontSize:'14px'}}>Dispute #{d.id}</div>
+                     <div style={{fontSize:'12px', background:'rgba(255,107,107,0.1)', color:'var(--red)', padding:'2px 8px', borderRadius:'8px', fontWeight:700}}>OPEN</div>
+                   </div>
+                   <div style={{fontSize:'13px', color:'var(--text-muted)'}}>Reporter: <span style={{color:'var(--text)', fontWeight:700}}>{d.reporterName}</span></div>
+                   <div style={{fontSize:'13px', color:'var(--text-muted)'}}>Reason: <span style={{color:'var(--amber)', fontWeight:700}}>{d.reason}</span></div>
+                   <div style={{fontSize:'12px', color:'var(--text)', background:'var(--surface2)', padding:'8px', borderRadius:'8px', marginTop:'8px', fontStyle:'italic'}}>
+                     "{d.statement}"
+                   </div>
+                   
+                   <div style={{marginTop:'12px', paddingTop:'12px', borderTop:'1px solid var(--border)'}}>
+                     <div style={{fontSize:'11px', fontWeight:700, color:'var(--text-muted)', marginBottom:'8px'}}>RESOLVE (AWARD OR DEDUCT 5 PTS)</div>
+                     
+                     <div style={{display:'flex', gap:'5px', marginBottom:'8px'}}>
+                       <div style={{flex:1, background:'var(--bg)', padding:'8px', borderRadius:'8px'}}>
+                         <div style={{fontSize:'12px', fontWeight:700}}>{d.seekerName} (Buyer)</div>
+                         <div style={{fontSize:'10px', color:'var(--text-muted)'}}>{d.seekerPhone}</div>
+                         <div style={{display:'flex', gap:'5px', marginTop:'5px'}}>
+                           <button className="btn-sm" style={{flex:1, padding:'4px', fontSize:'10px', background:'rgba(0,232,122,0.1)', color:'var(--green)', border:'1px solid var(--green)'}} onClick={() => resolveDispute(d.id, 'award', d.seekerid, d.providerid)}>Award</button>
+                           <button className="btn-sm" style={{flex:1, padding:'4px', fontSize:'10px', background:'rgba(255,107,107,0.1)', color:'var(--red)', border:'1px solid var(--red)'}} onClick={() => resolveDispute(d.id, 'deduct', d.seekerid, d.providerid)}>Deduct</button>
+                         </div>
+                       </div>
+                       
+                       <div style={{flex:1, background:'var(--bg)', padding:'8px', borderRadius:'8px'}}>
+                         <div style={{fontSize:'12px', fontWeight:700}}>{d.providerName} (Seller)</div>
+                         <div style={{fontSize:'10px', color:'var(--text-muted)'}}>{d.providerPhone}</div>
+                         <div style={{display:'flex', gap:'5px', marginTop:'5px'}}>
+                           <button className="btn-sm" style={{flex:1, padding:'4px', fontSize:'10px', background:'rgba(0,232,122,0.1)', color:'var(--green)', border:'1px solid var(--green)'}} onClick={() => resolveDispute(d.id, 'award', d.providerid, d.seekerid)}>Award</button>
+                           <button className="btn-sm" style={{flex:1, padding:'4px', fontSize:'10px', background:'rgba(255,107,107,0.1)', color:'var(--red)', border:'1px solid var(--red)'}} onClick={() => resolveDispute(d.id, 'deduct', d.providerid, d.seekerid)}>Deduct</button>
+                         </div>
+                       </div>
+                     </div>
+                     
+                     <div style={{display:'flex', gap:'10px'}}>
+                       <button className="btn-sm" style={{flex:1, justifyContent:'center', background:'rgba(255,184,0,0.1)', color:'var(--amber)', border:'none'}} onClick={() => joinDealChat({ id: d.dealid, buyerId: d.seekerid, sellerId: d.providerid })}>
+                         Inspect Chat 💬
+                       </button>
+                       <button className="btn-sm" style={{flex:1, justifyContent:'center', background:'var(--surface2)', color:'var(--text)', border:'1px solid var(--border)'}} onClick={() => resolveDispute(d.id, 'clear', null, null)}>
+                         Clear Issue (No Action)
+                       </button>
+                     </div>
+                   </div>
+                 </div>
+              ))}
+              {disputes.filter(d => d.status === 'open').length === 0 && <div style={{padding:'20px', textAlign:'center', color:'var(--text-muted)'}}>No open disputes right now.</div>}
+              {loadingDisputes && <div style={{padding:'20px', textAlign:'center'}}>Loading disputes...</div>}
+            </div>
+            
+            <h3 style={{marginTop:'30px'}}>✅ Resolved Disputes</h3>
+            <div className="admin-results">
+              {disputes.filter(d => d.status === 'resolved').map(d => (
+                 <div key={d.id} className="listing-card" style={{padding:'14px', borderLeft:'4px solid var(--green)', opacity:0.7}}>
+                   <div style={{fontWeight:700, fontSize:'14px'}}>Dispute #{d.id} (Resolved)</div>
+                   <div style={{fontSize:'12px', color:'var(--text-muted)'}}>Against: Deal #{d.dealid} | Reason: {d.reason}</div>
+                 </div>
+              ))}
             </div>
           </div>
         )}

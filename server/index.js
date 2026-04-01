@@ -440,10 +440,26 @@ app.post('/api/deals/:id/confirm', async (req, res) => {
     if (dealRes.rows.length === 0) return res.status(404).json({ error: 'Deal not found' });
     const deal = dealRes.rows[0];
 
+    let targetUserId = null;
+
     if (role === 'buyer') {
       await db.query('UPDATE deals SET buyer_confirmed = 1 WHERE id = $1', [deal.id]);
+      targetUserId = deal.providerid; // seller gets points
     } else {
       await db.query('UPDATE deals SET seller_confirmed = 1 WHERE id = $1', [deal.id]);
+      targetUserId = deal.seekerid; // buyer gets points
+    }
+
+    // Immediately award 5 pts to the target user
+    if (targetUserId) {
+       await db.query('UPDATE users SET ubuntupoints = ubuntupoints + 5 WHERE id = $1', [targetUserId]);
+       await createNotification(
+          targetUserId, 
+          'Gifted +5 Ubuntu Points! 🎁', 
+          'The other party marked the deal as DONE and gifted you 5 Ubuntu points!', 
+          'pts_gain', 
+          deal.id
+       );
     }
 
     // Refresh deal
@@ -451,15 +467,9 @@ app.post('/api/deals/:id/confirm', async (req, res) => {
     const updatedDeal = updatedRes.rows[0];
 
     if (updatedDeal.buyer_confirmed && updatedDeal.seller_confirmed) {
-      // Complete deal!
+      // Complete deal
       await db.query('UPDATE deals SET status = $1 WHERE id = $2', ['completed', deal.id]);
       await db.query('UPDATE listings SET status = $1 WHERE id = $2', ['sold', deal.listingid]);
-      
-      // Award points
-      await db.query('UPDATE users SET ubuntupoints = ubuntupoints + 5 WHERE id = $1 OR id = $2', [deal.seekerid, deal.providerid]);
-      
-      await createNotification(deal.seekerid, 'Trade Successful! +5 Pts', 'You and the provider confirmed the trade. You earned 5 ubuntu points!', 'pts_gain', deal.id);
-      await createNotification(deal.providerid, 'Trade Successful! +5 Pts', 'You and the winner confirmed the trade. You earned 5 ubuntu points!', 'pts_gain', deal.id);
     }
 
     res.json({ success: true, deal: updatedDeal });
@@ -673,6 +683,72 @@ app.post('/api/disputes', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Admin Disputes
+app.get('/api/admin/disputes', async (req, res) => {
+  // Need to join deal, reporter, u1, u2
+  try {
+    const isPg = db.USE_POSTGRES;
+    const queryStr = isPg 
+      ? `SELECT dp.*, 
+                d.status as "dealStatus", d.seekerid, d.providerid,
+                u1.fullname as "seekerName", u1.phone as "seekerPhone",
+                u2.fullname as "providerName", u2.phone as "providerPhone",
+                rep.fullname as "reporterName"
+         FROM disputes dp
+         JOIN deals d ON dp.dealid = d.id
+         JOIN users u1 ON d.seekerid = u1.id
+         JOIN users u2 ON d.providerid = u2.id
+         JOIN users rep ON dp.reporterid = rep.id
+         ORDER BY dp.createdat DESC`
+      : `SELECT dp.*, 
+                d.status as "dealStatus", d.seekerid, d.providerid,
+                u1.fullname as "seekerName", u1.phone as "seekerPhone",
+                u2.fullname as "providerName", u2.phone as "providerPhone",
+                rep.fullname as "reporterName"
+         FROM disputes dp
+         JOIN deals d ON dp.dealid = d.id
+         JOIN users u1 ON d.seekerid = u1.id
+         JOIN users u2 ON d.providerid = u2.id
+         JOIN users rep ON dp.reporterid = rep.id
+         ORDER BY dp.createdat DESC`;
+
+    const result = await db.query(queryStr);
+    res.json(result.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/admin/disputes/:id/resolve', async (req, res) => {
+  const { action, targetId, otherId } = req.body; 
+  // action: 'award', 'deduct', 'clear'
+  const disputeId = req.params.id;
+  try {
+    if (action === 'award' && targetId) {
+       await db.query('UPDATE users SET ubuntupoints = ubuntupoints + 5 WHERE id = $1', [targetId]);
+       await createNotification(targetId, 'Dispute Resolved', `Admin awarded you 5 pts for a resolved dispute.`, 'pts_gain', null);
+    } else if (action === 'deduct' && targetId) {
+       await db.query('UPDATE users SET ubuntupoints = ubuntupoints - 5 WHERE id = $1', [targetId]);
+       await createNotification(targetId, 'Dispute Resolved', `Admin deducted 5 pts for a resolved dispute.`, 'pts_loss', null);
+    }
+    
+    await db.query("UPDATE disputes SET status = 'resolved' WHERE id = $1", [disputeId]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Reviews
+app.post('/api/reviews', async (req, res) => {
+  const { dealid, authorid, targetid, text } = req.body;
+  try {
+     // Save simple review text
+     await db.query(
+        'INSERT INTO reviews (dealid, authorid, targetid, text) VALUES ($1, $2, $3, $4)',
+        [dealid, authorid, targetid, text]
+     );
+     res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 
 app.get('/api/messages/:chatId', async (req, res) => {
   try {
