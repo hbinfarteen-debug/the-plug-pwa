@@ -273,16 +273,14 @@ async function createNotification(userId, title, message, type, relatedId) {
 
 async function checkEndedListings() {
   try {
+    const isPg = db.USE_POSTGRES;
+    
     // 1. Find active listings that should have ended
-    const expiredRes = await db.query(`
-      SELECT * FROM listings 
-      WHERE status = 'active' 
-      AND (
-        (CASE WHEN createdat LIKE '%-%' THEN datetime(createdat) ELSE createdat END) <= datetime('now', '-' || duration || ' hours')
-        OR
-        (createdat <= CURRENT_TIMESTAMP - (duration || ' hours')::interval)
-      )
-    `);
+    const expiredQuery = isPg 
+      ? "SELECT * FROM listings WHERE status = 'active' AND createdat <= NOW() - (duration || ' hours')::interval"
+      : "SELECT * FROM listings WHERE status = 'active' AND (CASE WHEN createdat LIKE '%-%' THEN datetime(createdat) ELSE createdat END) <= datetime('now', '-' || duration || ' hours')";
+
+    const expiredRes = await db.query(expiredQuery);
 
     for (const listing of expiredRes.rows) {
       // Find winner
@@ -335,22 +333,14 @@ async function checkEndedListings() {
     }
 
     // 2. Check for deals older than 72hrs that aren't completed
-    // This is complex because we need to know WHO made it fall apart. 
-    // For now, if neither confirmed or only one did, we might need manual admin intervention or a simple rule.
-    // Rule: if 72hrs pass and it's still 'pending', admin is notified.
-    const stuckDeals = await db.query(`
-      SELECT d.*, l.title 
-      FROM deals d
-      JOIN listings l ON d.listingid = l.id
-      WHERE d.status = 'pending' 
-      AND d.points_deducted = 0
-      AND d.expires_at <= datetime('now')
-    `);
+    const stuckQuery = isPg
+      ? "SELECT d.*, l.title FROM deals d JOIN listings l ON d.listingid = l.id WHERE d.status = 'pending' AND d.points_deducted = 0 AND d.expires_at <= NOW()"
+      : "SELECT d.*, l.title FROM deals d JOIN listings l ON d.listingid = l.id WHERE d.status = 'pending' AND d.points_deducted = 0 AND d.expires_at <= datetime('now')";
+    
+    const stuckDeals = await db.query(stuckQuery);
 
     for (const deal of stuckDeals.rows) {
-       // Mark for admin to check
        await db.query('UPDATE deals SET status = $1, points_deducted = 1 WHERE id = $2', ['disputed', deal.id]);
-       // Notify admin (mocked via notifications to admin user ids)
        const admins = ['263715198745', '263775939688'];
        for (const phone of admins) {
           const admRes = await db.query('SELECT id FROM users WHERE phone = $1', [phone]);
@@ -372,9 +362,10 @@ setInterval(checkEndedListings, 10 * 60 * 1000);
 app.get('/api/listings', async (req, res) => {
   try {
     await checkEndedListings(); // Refresh active statuses
+    const isPg = db.USE_POSTGRES;
 
-    const result = await db.query(`
-      SELECT listings.*, 
+    const feedQuery = isPg
+      ? `SELECT listings.*, 
              listings.posterid as "posterId", 
              listings.imageurls as "imageUrls", 
              listings.is16plusfriendly as "is16PlusFriendly", 
@@ -384,11 +375,25 @@ app.get('/api/listings', async (req, res) => {
       FROM listings 
       JOIN users ON listings.posterid = users.id 
       WHERE status = 'active' 
-      OR (status = 'ended' AND datetime(listings.createdat, '+' || listings.duration || ' hours', '+24 hours') > datetime('now'))
-      ORDER BY listings.createdat DESC
-    `);
+      OR (status = 'ended' AND listings.createdat + (listings.duration + 24 || ' hours')::interval > NOW())
+      ORDER BY listings.createdat DESC`
+      : `SELECT listings.*, 
+             listings.posterid as "posterId", 
+             listings.imageurls as "imageUrls", 
+             listings.is16plusfriendly as "is16PlusFriendly", 
+             listings.createdat as "createdAt",
+             (SELECT COUNT(*) FROM bids WHERE listingid = listings.id) as "bidCount",
+             users.fullname, users.ubuntupoints, users.homebase 
+      FROM listings 
+      JOIN users ON listings.posterid = users.id 
+      WHERE status = 'active' 
+      OR (status = 'ended' AND datetime(listings.createdat, '+' || (listings.duration + 24) || ' hours') > datetime('now'))
+      ORDER BY listings.createdat DESC`;
+
+    const result = await db.query(feedQuery);
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });

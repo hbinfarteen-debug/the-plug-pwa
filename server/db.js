@@ -360,4 +360,4 @@ function query(text, params = []) {
   });
 }
 
-module.exports = { query, pool: pgPool || sqliteDb };
+module.exports = { query, pool: pgPool || sqliteDb, USE_POSTGRES };
