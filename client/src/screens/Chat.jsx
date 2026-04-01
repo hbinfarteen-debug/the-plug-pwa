@@ -184,6 +184,11 @@ export default function Chat() {
                 Report Issue 🚩
               </button>
            </div>
+           
+           <div style={{marginTop:'12px', fontSize:'9px', color:'var(--amber)', textAlign:'center', display:'flex', alignItems:'center', justifyContent:'center', gap:'4px', opacity: 0.8}}>
+             <span>⚠️</span> 
+             <span>If you carry the conversation off-app (e.g. WhatsApp), please take screenshots as evidence in case of a dispute.</span>
+           </div>
         </div>
       )}
 
