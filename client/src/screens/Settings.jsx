@@ -182,7 +182,7 @@ export default function Settings({ showToast, t, language, setLanguage }) {
         {/* Phone display */}
         <div className="settings-item">
           <div className="settings-label">Mobile Number</div>
-          <div className="settings-val">+{user?.phone || '2637xxxxxxxx'}</div>
+          <div className="settings-val">{user?.phone?.startsWith('+') ? user.phone : `+${user?.phone || '2637xxxxxxxx'}`}</div>
         </div>
 
         <div className="settings-item" onClick={() => setShowDonateModal(true)} style={{background:'rgba(255, 235, 59, 0.05)', border:'1px solid rgba(255, 235, 59, 0.1)'}}>

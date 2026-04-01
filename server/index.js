@@ -232,6 +232,7 @@ app.get('/api/users/:id', async (req, res) => {
     const result = await db.query(
       `SELECT id, fullname, fullname as "fullName", homebase, homebase as "homeBase", ubuntupoints, ubuntupoints as "ubuntuPoints", 
               avatarurl as "avatarUrl", avatarurl as "avatarurl", phone_verified, phone_verified as "phoneVerified",
+              phone, role,
               unlockedsuburbs_limit as "unlockedSuburbsLimit", unlockedsuburbs as "unlockedSuburbs" 
        FROM users WHERE id = $1`,
       [req.params.id]
