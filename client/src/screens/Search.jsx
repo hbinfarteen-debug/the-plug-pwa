@@ -11,7 +11,8 @@ export default function Search({ t }) {
     setUser(localUser);
   }, []);
 
-  const isAdmin = user?.phone === '263715198745' || user?.phone === '+263715198745' || 
+  const isAdmin = user?.role === 'admin' || 
+                  user?.phone === '263715198745' || user?.phone === '+263715198745' || 
                   user?.phone === '263775939688' || user?.phone === '+263775939688';
 
   const filters = [t.all, t.items, t.gigs, t.friendly, t.ending];

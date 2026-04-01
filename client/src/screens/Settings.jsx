@@ -140,7 +140,8 @@ export default function Settings({ showToast, t, language, setLanguage }) {
   };
 
   const isVerified = user?.phoneVerified || user?.phone_verified;
-  const isAdmin = user?.phone === '263715198745' || user?.phone === '+263715198745' || 
+  const isAdmin = user?.role === 'admin' || 
+                  user?.phone === '263715198745' || user?.phone === '+263715198745' || 
                   user?.phone === '263775939688' || user?.phone === '+263775939688';
 
   return (
