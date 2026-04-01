@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 export default function Profile({ showToast }) {
   const navigate = useNavigate();
@@ -7,8 +8,22 @@ export default function Profile({ showToast }) {
   const [vacation, setVacation] = useState(() => localStorage.getItem('vmode') === 'true');
 
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem('plug_user') || '{}');
-    if (data.id) setUser(data);
+    const stored = JSON.parse(localStorage.getItem('plug_user') || '{}');
+    if (!stored.id) return;
+    
+    // Fetch fresh data to ensure points are up to date
+    fetch(`${API_BASE_URL}/api/users/${stored.id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.id) {
+          setUser(data);
+          localStorage.setItem('plug_user', JSON.stringify(data));
+        }
+      })
+      .catch(err => {
+        console.error("Profile sync error:", err);
+        setUser(stored);
+      });
   }, []);
 
   const toggleVacation = () => {
