@@ -112,6 +112,7 @@ function initSqlite() {
         chatid INTEGER REFERENCES chats(id),
         senderid INTEGER REFERENCES users(id),
         text TEXT NOT NULL,
+        is_admin INTEGER DEFAULT 0,
         createdat TEXT DEFAULT (datetime('now'))
       )`);
       sqliteDb.run(`CREATE TABLE IF NOT EXISTS payments (
@@ -290,6 +291,7 @@ if (USE_POSTGRES) {
           chatid INTEGER REFERENCES chats(id),
           senderid INTEGER REFERENCES users(id),
           text TEXT NOT NULL,
+          is_admin BOOLEAN DEFAULT false,
           createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -337,6 +339,7 @@ if (USE_POSTGRES) {
         await client.query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP`);
         await client.query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS points_deducted BOOLEAN DEFAULT false`);
         await client.query(`ALTER TABLE chats ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'deal'`);
+        await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false`);
       } catch (e) {
         console.error('Migration notice:', e.message);
       }

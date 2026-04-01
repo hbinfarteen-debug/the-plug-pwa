@@ -450,9 +450,11 @@ app.post('/api/deals/:id/confirm', async (req, res) => {
     let targetUserId = null;
 
     if (role === 'buyer') {
+      console.log(`[Deal Confirm] Buyer ${userId} confirmed for deal ${deal.id}. Awarding Seller ${deal.providerid}`);
       await db.query('UPDATE deals SET buyer_confirmed = true WHERE id = $1', [deal.id]);
       targetUserId = deal.providerid; // seller gets points
     } else {
+      console.log(`[Deal Confirm] Seller ${userId} confirmed for deal ${deal.id}. Awarding Buyer ${deal.seekerid}`);
       await db.query('UPDATE deals SET seller_confirmed = true WHERE id = $1', [deal.id]);
       targetUserId = deal.seekerid; // buyer gets points
     }
@@ -789,11 +791,11 @@ app.get('/api/messages/:chatId', async (req, res) => {
 });
 
 app.post('/api/messages', async (req, res) => {
-  const { chatId, senderId, text } = req.body;
+  const { chatId, senderId, text, isAdmin } = req.body;
   try {
     const result = await db.query(
-      'INSERT INTO messages (chatid, senderid, text) VALUES ($1, $2, $3) RETURNING *',
-      [chatId, senderId, text]
+      'INSERT INTO messages (chatid, senderid, text, is_admin) VALUES ($1, $2, $3, $4) RETURNING *',
+      [chatId, senderId, text, isAdmin || false]
     );
     
     // Update last message in chat

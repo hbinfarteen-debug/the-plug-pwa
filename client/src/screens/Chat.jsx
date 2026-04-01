@@ -110,7 +110,8 @@ export default function Chat({ showToast, t }) {
         body: JSON.stringify({
           chatId: id,
           senderId: user.id,
-          text: msg
+          text: msg,
+          isAdmin: user.role === 'admin'
         })
       });
       if (res.ok) {
@@ -203,9 +204,9 @@ export default function Chat({ showToast, t }) {
           const phoneToCheck = m.senderPhone || (isSender ? user.phone : null);
           const roleToCheck = m.senderRole || (isSender ? user.role : null);
           
-          const isAdminAccount = roleToCheck === 'admin' || phoneToCheck === '263715198745' || phoneToCheck === '263775939688';
+          const isAdminAccount = roleToCheck === 'admin' || phoneToCheck === '263715198745' || phoneToCheck === '263775939688' || m.is_admin;
           const isParticipant = (Number(chatInfo?.buyerId) === Number(m.senderId) || Number(chatInfo?.sellerId) === Number(m.senderId));
-          const renderAsAdmin = isAdminAccount && !isParticipant;
+          const renderAsAdmin = (isAdminAccount && !isParticipant) || m.is_admin;
 
           const senderName = m.senderName || (isSender ? user.fullname : otherPersonName);
           const initial = senderName?.charAt(0)?.toUpperCase() || '?';
