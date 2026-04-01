@@ -631,6 +631,49 @@ app.post('/api/chats', async (req, res) => {
   }
 });
 
+// Disputes
+app.post('/api/disputes', async (req, res) => {
+  const { dealid, reporterid, reason, statement } = req.body;
+  try {
+    // 1. Insert dispute
+    if (db.USE_POSTGRES) {
+      await db.query(
+        'INSERT INTO disputes (dealid, reporterid, reason, statement) VALUES ($1, $2, $3, $4)',
+        [dealid, reporterid, reason, statement]
+      );
+    } else {
+      await db.query(
+        'INSERT INTO disputes (dealid, reporterid, reason, statement) VALUES ($1, $2, $3, $4)',
+        [dealid, reporterid, reason, statement]
+      );
+    }
+
+    // 2. Mark deal as disputed
+    if (dealid) {
+      await db.query("UPDATE deals SET status = 'disputed' WHERE id = $1", [dealid]);
+    }
+
+    // 3. Notify admins
+    const admins = ['263715198745', '263775939688'];
+    for (const phone of admins) {
+       const admRes = await db.query('SELECT id FROM users WHERE phone = $1', [phone]);
+       if (admRes.rows[0]) {
+          await createNotification(
+             admRes.rows[0].id, 
+             '🚩 New Dispute Filed', 
+             `Deal #${dealid || 'Unknown'} was disputed for: ${reason}. Please review the chat.`, 
+             'admin_alert', 
+             dealid || null
+          );
+       }
+    }
+
+    res.json({ message: 'Dispute filed successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/messages/:chatId', async (req, res) => {
   try {
     const result = await db.query(`

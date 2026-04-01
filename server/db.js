@@ -135,6 +135,16 @@ function initSqlite() {
         read INTEGER DEFAULT 0,
         createdat TEXT DEFAULT (datetime('now'))
       )`);
+      sqliteDb.run(`CREATE TABLE IF NOT EXISTS disputes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        dealid INTEGER REFERENCES deals(id),
+        reporterid INTEGER REFERENCES users(id),
+        reason TEXT,
+        statement TEXT,
+        admin_notes TEXT,
+        status TEXT DEFAULT 'open',
+        createdat TEXT DEFAULT (datetime('now'))
+      )`);
 
       // SQLite Migrations
       sqliteDb.serialize(() => {
