@@ -756,8 +756,12 @@ app.get('/api/messages/:chatId', async (req, res) => {
       SELECT messages.*, 
              messages.chatid as "chatId",
              messages.senderid as "senderId",
-             messages.createdat as "createdAt"
+             messages.createdat as "createdAt",
+             users.fullname as "senderName",
+             users.phone as "senderPhone",
+             users.role as "senderRole"
       FROM messages 
+      LEFT JOIN users ON messages.senderid = users.id
       WHERE chatid = $1 
       ORDER BY messages.createdat ASC
     `, [req.params.chatId]);

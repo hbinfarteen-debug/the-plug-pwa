@@ -198,26 +198,37 @@ export default function Chat() {
             No messages yet. Send one to start the deal!
           </div>
         )}
-        {history.map((m, i) => (
+        {history.map((m, i) => {
+          const isAdmin = m.senderRole === 'admin' || m.senderPhone === '263715198745' || m.senderPhone === '263775939688';
+          const isSender = m.senderId === user.id;
+          
+          return (
           <div key={i} style={{
             maxWidth:'80%',
             padding:'12px 16px',
             borderRadius:'18px',
             fontSize:'14px',
             lineHeight:1.5,
-            alignSelf: m.senderId === user.id ? 'flex-end' : 'flex-start',
-            background: m.senderId === user.id ? 'var(--green)' : 'var(--surface2)',
-            color: m.senderId === user.id ? '#000' : 'var(--text)',
-            border: m.senderId === user.id ? 'none' : '1px solid var(--border)',
-            borderBottomRightRadius: m.senderId === user.id ? '4px' : '18px',
-            borderBottomLeftRadius: m.senderId !== user.id ? '4px' : '18px',
+            alignSelf: isAdmin ? 'center' : (isSender ? 'flex-end' : 'flex-start'),
+            background: isAdmin ? 'rgba(255, 69, 58, 0.15)' : (isSender ? 'var(--green)' : 'var(--surface2)'),
+            color: isAdmin ? 'var(--red)' : (isSender ? '#000' : 'var(--text)'),
+            border: isAdmin ? '1px solid var(--red)' : (isSender ? 'none' : '1px solid var(--border)'),
+            borderBottomRightRadius: isAdmin ? '18px' : (isSender ? '4px' : '18px'),
+            borderBottomLeftRadius: isAdmin ? '18px' : (!isSender ? '4px' : '18px'),
           }}>
-            {m.text}
+            {isAdmin ? (
+               <div style={{fontSize:'11px', fontWeight:800, marginBottom:'4px', color:'var(--red)'}}>🚨 ADMIN</div>
+            ) : (
+               <div style={{fontSize:'10px', fontWeight:700, marginBottom:'4px', opacity:0.6}}>
+                 {m.senderName || (isSender ? user.fullname : 'Other')}
+               </div>
+            )}
+            <div>{m.text}</div>
             <div style={{fontSize:'10px', marginTop:'4px', opacity:0.6, textAlign:'right'}}>
               {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
             </div>
           </div>
-        ))}
+        )})}
       </div>
 
       {(isVerified || deal) ? (
