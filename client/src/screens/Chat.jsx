@@ -36,7 +36,11 @@ export default function Chat({ showToast, t }) {
            setChatInfo(thisChat);
            const dealsRes = await fetch(`${API_BASE_URL}/api/deals/${user.id}`);
            const deals = await dealsRes.json();
-           const match = deals.find(d => d.listingid == thisChat.listingId);
+           // Only show deal header if this specific user is the seeker OR provider in the deal
+           const match = deals.find(d => 
+             d.listingid == thisChat.listingId && 
+             (Number(d.seekerid) === Number(thisChat.buyerId) || Number(d.providerid) === Number(thisChat.buyerId))
+           );
            if (match) setDeal(match);
          }
        } catch(e) {}
