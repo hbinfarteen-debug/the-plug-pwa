@@ -450,10 +450,10 @@ app.post('/api/deals/:id/confirm', async (req, res) => {
     let targetUserId = null;
 
     if (role === 'buyer') {
-      await db.query('UPDATE deals SET buyer_confirmed = 1 WHERE id = $1', [deal.id]);
+      await db.query('UPDATE deals SET buyer_confirmed = true WHERE id = $1', [deal.id]);
       targetUserId = deal.providerid; // seller gets points
     } else {
-      await db.query('UPDATE deals SET seller_confirmed = 1 WHERE id = $1', [deal.id]);
+      await db.query('UPDATE deals SET seller_confirmed = true WHERE id = $1', [deal.id]);
       targetUserId = deal.seekerid; // buyer gets points
     }
 
