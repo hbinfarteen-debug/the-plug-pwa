@@ -999,15 +999,28 @@ app.get('/api/admin/won-bids', async (req, res) => {
              u.fullname as "posterName", 
              b.amount as "highestBid",
              bidder.fullname as "winningBidder",
-             l.status
+             l.status,
+             l.createdat as "createdAt",
+             l.duration
       FROM listings l
       JOIN users u ON l.posterid = u.id
       JOIN bids b ON l.id = b.listingid
       JOIN users bidder ON b.bidderid = bidder.id
       WHERE b.amount = (SELECT MAX(amount) FROM bids WHERE listingid = l.id)
+        AND l.admin_cleared = FALSE
       ORDER BY l.createdat DESC
     `);
     res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin: Clear a won bid from view
+app.post('/api/admin/clear-bid/:id', async (req, res) => {
+  try {
+    await db.query('UPDATE listings SET admin_cleared = TRUE WHERE id = $1', [req.params.id]);
+    res.json({ success: true, message: 'Bid cleared from view' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

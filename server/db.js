@@ -59,9 +59,8 @@ function initSqlite() {
       )`);
 
       // Migration: Add suburbs if not exists (SQLite)
-      sqliteDb.run(`ALTER TABLE listings ADD COLUMN suburbs TEXT DEFAULT '[]'`, (err) => {
-        // Ignore error if column exists
-      });
+      sqliteDb.run(`ALTER TABLE listings ADD COLUMN suburbs TEXT DEFAULT '[]'`, (err) => {});
+      sqliteDb.run(`ALTER TABLE listings ADD COLUMN admin_cleared INTEGER DEFAULT 0`, (err) => {});
 
       sqliteDb.run(`CREATE TABLE IF NOT EXISTS bids (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -227,6 +226,9 @@ if (USE_POSTGRES) {
         BEGIN 
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='listings' AND column_name='suburbs') THEN
             ALTER TABLE listings ADD COLUMN suburbs TEXT DEFAULT '[]';
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='listings' AND column_name='admin_cleared') THEN
+            ALTER TABLE listings ADD COLUMN admin_cleared BOOLEAN DEFAULT FALSE;
           END IF;
         END $$;
       `);

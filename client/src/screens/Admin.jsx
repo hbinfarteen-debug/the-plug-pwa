@@ -95,6 +95,22 @@ export default function Admin({ showToast }) {
     }
   };
 
+  const clearBid = async (id) => {
+    if (!confirm('Clear this bid from your view?')) return;
+    try {
+       const res = await fetch(`${API_BASE_URL}/api/admin/clear-bid/${id}`, {
+         method: 'POST',
+         headers: { 'x-admin-key': sessionStorage.getItem('admin_key') || '' }
+       });
+       if (res.ok) {
+         showToast('Bid cleared from view', 'success');
+         fetchWonBids();
+       }
+    } catch (e) {
+      showToast('Error clearing bid', 'error');
+    }
+  };
+
   const fetchPendingPayments = async () => {
     setLoadingPayments(true);
     try {
@@ -422,27 +438,46 @@ export default function Admin({ showToast }) {
           <div className="asec">
             <h3>🏆 Won Bids & Deals</h3>
             <div className="admin-results">
-              {wonBids.map(b => (
-                 <div key={b.id} className="listing-card" style={{padding:'14px'}}>
-                   <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
-                     <div style={{fontWeight:700}}>{b.title}</div>
-                     <div style={{fontSize:'12px', background:b.status === 'active' ? 'rgba(0,232,122,0.1)' : 'rgba(255,107,107,0.1)', color:b.status === 'active' ? 'var(--green)' : 'var(--red)', padding:'2px 8px', borderRadius:'8px', fontWeight:700}}>
-                       {b.status === 'active' ? 'ACTIVE' : 'INACTIVE'}
-                     </div>
-                   </div>
-                   <div style={{fontSize:'13px', color:'var(--text-muted)'}}>Poster: <span style={{color:'var(--text)'}}>{b.posterName}</span></div>
-                   <div style={{fontSize:'13px', color:'var(--text-muted)'}}>Winner: <span style={{color:'var(--green)', fontWeight:700}}>{b.winningBidder}</span></div>
-                   <div style={{marginTop:'10px', paddingTop:'10px', borderTop:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                      <div style={{fontSize:'11px', color:'var(--text-muted)'}}>Base: ${Number(b.basePrice || 0).toFixed(2)}</div>
-                      <div style={{fontSize:'15px', fontWeight:900, color:'var(--green)'}}>${Number(b.highestBid).toFixed(2)}</div>
-                   </div>
-                   <div style={{marginTop:'10px'}}>
-                     <button className="btn-sm" style={{width:'100%', justifyContent:'center', background:'rgba(255,184,0,0.1)', color:'var(--amber)', border:'1px solid var(--amber)'}} onClick={() => joinDealChat(b)}>
-                       Inspect Deal Chat 💬
-                     </button>
-                   </div>
-                </div>
-              ))}
+              {wonBids.map(b => {
+                const start = new Date(b.createdAt);
+                const end = new Date(start.getTime() + (b.duration || 24) * 3600000);
+                const now = new Date();
+                const diffMs = now - end;
+                const hrs = Math.floor(diffMs / 3600000);
+                const mins = Math.floor((diffMs % 3600000) / 60000);
+                const isEnded = diffMs > 0;
+
+                return (
+                  <div key={b.id} className="listing-card" style={{padding:'14px', border: hrs >= 72 ? '2px solid var(--red)' : '1px solid var(--border)'}}>
+                    <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
+                      <div style={{fontWeight:700}}>{b.title}</div>
+                      <div style={{fontSize:'12px', background:b.status === 'active' ? 'rgba(0,232,122,0.1)' : 'rgba(255,107,107,0.1)', color:b.status === 'active' ? 'var(--green)' : 'var(--red)', padding:'2px 8px', borderRadius:'8px', fontWeight:700}}>
+                        {b.status === 'active' ? 'ACTIVE' : 'INACTIVE'}
+                      </div>
+                    </div>
+                    <div style={{fontSize:'13px', color:'var(--text-muted)'}}>Poster: <span style={{color:'var(--text)'}}>{b.posterName}</span></div>
+                    <div style={{fontSize:'13px', color:'var(--text-muted)'}}>Winner: <span style={{color:'var(--green)', fontWeight:700}}>{b.winningBidder}</span></div>
+                    
+                    <div style={{marginTop:'8px', fontSize:'11px', fontWeight:700, color: hrs >= 72 ? 'var(--red)' : 'var(--amber)'}}>
+                      {isEnded ? `⏱️ Ended: ${hrs}h ${mins}m ago` : `⏳ Ends in: ${Math.abs(hrs)}h ${Math.abs(mins)}m`}
+                      {hrs >= 72 && " — Window Closed! 🛑"}
+                    </div>
+
+                    <div style={{marginTop:'10px', paddingTop:'10px', borderTop:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                       <div style={{fontSize:'11px', color:'var(--text-muted)'}}>Base: ${Number(b.basePrice || 0).toFixed(2)}</div>
+                       <div style={{fontSize:'15px', fontWeight:900, color:'var(--green)'}}>${Number(b.highestBid).toFixed(2)}</div>
+                    </div>
+                    <div style={{marginTop:'10px', display:'flex', gap:'10px'}}>
+                      <button className="btn-sm" style={{flex:1, justifyContent:'center', background:'rgba(255,184,0,0.1)', color:'var(--amber)', border:'1px solid var(--amber)'}} onClick={() => joinDealChat(b)}>
+                        Inspect Deal Chat 💬
+                      </button>
+                      <button className="btn-sm" style={{background:'rgba(255,107,107,0.1)', color:'var(--red)', border:'1px solid rgba(255,107,107,0.3)'}} onClick={() => clearBid(b.id)}>
+                        Clear🗑️
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
               {wonBids.length === 0 && <div style={{padding:'20px', textAlign:'center', color:'var(--text-muted)'}}>No bids recorded yet.</div>}
               {loadingBids && <div style={{padding:'20px', textAlign:'center'}}>Loading bids...</div>}
             </div>
