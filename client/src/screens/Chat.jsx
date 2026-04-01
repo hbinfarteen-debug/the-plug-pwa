@@ -39,7 +39,7 @@ export default function Chat() {
 
     const fetchChatInfo = async () => {
        try {
-         const res = await fetch(`${API_BASE_URL}/api/chats/${user.id}`);
+         const res = await fetch(`/api/chats/${user.id}`);
          const data = await res.json();
          const thisChat = data.find(c => c.id == id);
          if (thisChat) {
@@ -126,35 +126,43 @@ export default function Chat() {
             {deal?.status === 'completed' ? 'Deal Sealed ✅' : (deal ? 'HONOR DEAL WITHIN 72H ⏳' : 'Inquiry')}
           </div>
         </div>
-        <div className="icon-btn">📞</div>
+        <div></div>
       </div>
 
       {deal && deal.status !== 'completed' && (
-        <div style={{padding:'12px 20px', background:'rgba(255,184,0,0.1)', borderBottom:'1px solid rgba(255,184,0,0.2)', textAlign:'center'}}>
-           <div style={{fontSize:'13px', fontWeight:700, marginBottom:'6px', color:'var(--amber)'}}>Ready to seal the trade?</div>
-           <div style={{fontSize:'11px', color:'var(--text-muted)', marginBottom:'10px'}}>Both parties must click OK to earn 5 Ubuntu Points!</div>
-           <div style={{display:'flex', gap:'10px', justifyContent:'center'}}>
+        <div style={{padding:'12px 20px', background:'rgba(255,184,0,0.1)', borderBottom:'1px solid rgba(255,184,0,0.2)'}}>
+           <div style={{fontSize:'13px', fontWeight:700, marginBottom:'6px', color:'var(--amber)', textAlign:'center'}}>Ready to seal the trade?</div>
+           <div style={{fontSize:'11px', color:'var(--text-muted)', marginBottom:'10px', textAlign:'center'}}>Only agree to a done deal if the deal is completed. Earn 5 Ubuntu points!</div>
+           
+           <div style={{display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap'}}>
               {isBuyer ? (
                 <button 
                   className="btn-sm" 
                   disabled={deal.buyer_confirmed || loadingDeal}
-                  style={{background: deal.buyer_confirmed ? 'var(--green)' : 'var(--amber)', color:'#000', minWidth:'150px'}}
+                  style={{background: deal.buyer_confirmed ? 'var(--green)' : 'var(--amber)', color:'#000', flex:1, minWidth:'120px'}}
                   onClick={() => confirmTrade('buyer')}
                 >
-                  {deal.buyer_confirmed ? '✅ You OK\'d Trade' : 'OK TRADE 🤝'}
+                  {deal.buyer_confirmed ? '✅ Agreed' : 'DONE DEAL 🤝'}
                 </button>
               ) : isSeller ? (
                 <button 
                    className="btn-sm" 
                    disabled={deal.seller_confirmed || loadingDeal}
-                   style={{background: deal.seller_confirmed ? 'var(--green)' : 'var(--amber)', color:'#000', minWidth:'150px'}}
+                   style={{background: deal.seller_confirmed ? 'var(--green)' : 'var(--amber)', color:'#000', flex:1, minWidth:'120px'}}
                    onClick={() => confirmTrade('seller')}
                 >
-                  {deal.seller_confirmed ? '✅ You OK\'d Trade' : 'OK TRADE 🤝'}
+                  {deal.seller_confirmed ? '✅ Agreed' : 'DONE DEAL 🤝'}
                 </button>
               ) : (
                 <div style={{fontSize:'12px', color:'var(--amber)', fontWeight:700}}>[Admin View] Waiting on users to honor deal.</div>
               )}
+              <button 
+                className="btn-sm" 
+                style={{background:'rgba(255,107,107,0.1)', color:'var(--red)', border:'1px solid var(--red)', flex:1, minWidth:'100px'}}
+                onClick={() => navigate('/dispute', { state: { dealId: deal.id } })}
+              >
+                Report Issue 🚩
+              </button>
            </div>
         </div>
       )}
@@ -189,7 +197,6 @@ export default function Chat() {
 
       {(isVerified || deal) ? (
         <div style={{padding:'12px 20px 24px', background:'var(--surface)', borderTop:'1px solid var(--border)', display:'flex', gap:'10px', alignItems:'center'}}>
-          <div className="icon-btn">📎</div>
           <div style={{flex:1, background:'var(--surface2)', borderRadius:'100px', padding:'10px 18px', border:'1px solid var(--border)'}}>
              <input 
                style={{width:'100%', background:'none', border:'none', color:'var(--text)', outline:'none', fontSize:'14px'}}
