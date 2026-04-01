@@ -199,10 +199,13 @@ export default function Chat() {
           </div>
         )}
         {history.map((m, i) => {
-          const isAdminAccount = m.senderRole === 'admin' || m.senderPhone === '263715198745' || m.senderPhone === '263775939688';
+          const isSender = m.senderId === user.id;
+          const phoneToCheck = m.senderPhone || (isSender ? user.phone : null);
+          const roleToCheck = m.senderRole || (isSender ? user.role : null);
+          
+          const isAdminAccount = roleToCheck === 'admin' || phoneToCheck === '263715198745' || phoneToCheck === '263775939688';
           const isParticipant = (chatInfo?.buyerId === m.senderId || chatInfo?.sellerId === m.senderId);
           const renderAsAdmin = isAdminAccount && !isParticipant;
-          const isSender = m.senderId === user.id;
           
           return (
           <div key={i} style={{
