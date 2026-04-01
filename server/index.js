@@ -653,6 +653,8 @@ app.get('/api/admin/won-bids', async (req, res) => {
   try {
     const result = await db.query(`
       SELECT l.id, l.title, l.price as "basePrice", 
+             l.posterid as "sellerId",
+             b.bidderid as "buyerId",
              u.fullname as "posterName", 
              b.amount as "highestBid",
              bidder.fullname as "winningBidder",

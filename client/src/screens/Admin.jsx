@@ -79,6 +79,28 @@ export default function Admin({ showToast }) {
     }
   };
 
+  const joinDealChat = async (bid) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/chats`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingId: bid.id,
+          buyerId: bid.buyerId,
+          sellerId: bid.sellerId
+        })
+      });
+      const data = await res.json();
+      if (data.id) {
+        navigate(`/chat/${data.id}`);
+      } else {
+        showToast('Could not find or create chat', 'error');
+      }
+    } catch (e) {
+      showToast('Error joining chat', 'error');
+    }
+  };
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     setSearching(true);
@@ -342,6 +364,11 @@ export default function Admin({ showToast }) {
                    <div style={{marginTop:'10px', paddingTop:'10px', borderTop:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                       <div style={{fontSize:'11px', color:'var(--text-muted)'}}>Base: ${Number(b.basePrice || 0).toFixed(2)}</div>
                       <div style={{fontSize:'15px', fontWeight:900, color:'var(--green)'}}>${Number(b.highestBid).toFixed(2)}</div>
+                   </div>
+                   <div style={{marginTop:'10px'}}>
+                     <button className="btn-sm" style={{width:'100%', justifyContent:'center', background:'rgba(255,184,0,0.1)', color:'var(--amber)', border:'1px solid var(--amber)'}} onClick={() => joinDealChat(b)}>
+                       Inspect Deal Chat 💬
+                     </button>
                    </div>
                 </div>
               ))}

@@ -28,8 +28,8 @@ export default function PostListing({ showToast }) {
                     u.phone === '263775939688' || u.phone === '+263775939688';
     
     const unlocked = typeof u.unlockedSuburbs === 'string' ? JSON.parse(u.unlockedSuburbs || '[]') : (u.unlockedSuburbs || []);
-    const totalSlots = 1 + unlocked.length;
-    const limit = isAdmin ? 500 : totalSlots;
+    const pool = Array.from(new Set([home, 'CBD', ...unlocked])).filter(Boolean);
+    const limit = isAdmin ? 500 : pool.length;
 
     if (selectedSuburbs.includes(loc)) {
       if (selectedSuburbs.length === 1 && loc === home) return; // Must have at least 1
@@ -38,7 +38,7 @@ export default function PostListing({ showToast }) {
       if (selectedSuburbs.length < limit) {
         setSelectedSuburbs([...selectedSuburbs, loc]);
       } else {
-        showToast(`Limit reached (${totalSlots} slots). Unlock more neighborhoods to select more.`, 'error');
+        showToast(`Limit reached. You can only select up to ${limit} neighborhoods.`, 'error');
       }
     }
   };
