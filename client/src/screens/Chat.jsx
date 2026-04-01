@@ -221,13 +221,14 @@ export default function Chat({ showToast, t }) {
           })();
 
           return (
-            <div key={i}>
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
               {/* Date separator */}
               {showDateSep && (
                 <div style={{
                   textAlign:'center', margin:'12px 0',
                   fontSize:'10px', color:'var(--text-dim)',
-                  display:'flex', alignItems:'center', gap:'10px'
+                  display:'flex', alignItems:'center', gap:'10px',
+                  width: '100%'
                 }}>
                   <div style={{flex:1, height:'1px', background:'var(--border)'}} />
                   <span style={{padding:'3px 12px', background:'var(--surface2)', borderRadius:'100px', border:'1px solid var(--border)'}}>
