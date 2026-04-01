@@ -354,10 +354,12 @@ export default function Admin({ showToast }) {
             <h3>🏆 Won Bids & Deals</h3>
             <div className="admin-results">
               {wonBids.map(b => (
-                <div key={b.id} className="listing-card" style={{padding:'14px'}}>
+                 <div key={b.id} className="listing-card" style={{padding:'14px'}}>
                    <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
                      <div style={{fontWeight:700}}>{b.title}</div>
-                     <div style={{fontSize:'12px', background:'var(--surface2)', padding:'2px 8px', borderRadius:'8px'}}>{b.status.toUpperCase()}</div>
+                     <div style={{fontSize:'12px', background:b.status === 'active' ? 'rgba(0,232,122,0.1)' : 'rgba(255,107,107,0.1)', color:b.status === 'active' ? 'var(--green)' : 'var(--red)', padding:'2px 8px', borderRadius:'8px', fontWeight:700}}>
+                       {b.status === 'active' ? 'ACTIVE' : 'INACTIVE'}
+                     </div>
                    </div>
                    <div style={{fontSize:'13px', color:'var(--text-muted)'}}>Poster: <span style={{color:'var(--text)'}}>{b.posterName}</span></div>
                    <div style={{fontSize:'13px', color:'var(--text-muted)'}}>Winner: <span style={{color:'var(--green)', fontWeight:700}}>{b.winningBidder}</span></div>

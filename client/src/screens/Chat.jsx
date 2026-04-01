@@ -9,6 +9,9 @@ export default function Chat() {
   const [chatInfo, setChatInfo] = useState(null);
   const scrollRef = useRef();
 
+  const [deal, setDeal] = useState(null);
+  const [loadingDeal, setLoadingDeal] = useState(false);
+
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
     if (!user.id) return navigate('/onboard');
@@ -21,11 +24,62 @@ export default function Chat() {
         .catch(err => console.error(err));
     };
 
+    // Fetch deal info to show confirmation buttons
+    const fetchDeal = async () => {
+      try {
+        const res = await fetch(`/api/deals/${user.id}`);
+        const data = await res.json();
+        // Look for the deal linked to this chat's listingId
+        // We'll need chatInfo first to know listingId
+        if (Array.isArray(data)) {
+           // We'll fetch chatInfo below to match listingId
+        }
+      } catch (e) {}
+    };
+
+    const fetchChatInfo = async () => {
+       try {
+         const res = await fetch(`${API_BASE_URL}/api/chats/${user.id}`);
+         const data = await res.json();
+         const thisChat = data.find(c => c.id == id);
+         if (thisChat) {
+           setChatInfo(thisChat);
+           // Now get deal for this listing
+           const dealsRes = await fetch(`/api/deals/${user.id}`);
+           const deals = await dealsRes.json();
+           const match = deals.find(d => d.listingid == thisChat.listingId);
+           if (match) setDeal(match);
+         }
+       } catch(e) {}
+    };
+
     fetchMsgs();
+    fetchChatInfo();
     const interval = setInterval(fetchMsgs, 3000); // Polling for now
 
     return () => clearInterval(interval);
   }, [id, navigate]);
+
+  const confirmTrade = async (role) => {
+    setLoadingDeal(true);
+    const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
+    try {
+      const res = await fetch(`/api/deals/${deal.id}/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, role })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDeal(data.deal);
+        if (data.deal.status === 'completed') {
+           // showToast handled via parent but internal alert for now
+           alert('Deal Completed! +5 Ubuntu Points awarded! 🏆');
+        }
+      }
+    } catch(e) { console.error(e); }
+    setLoadingDeal(false);
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -59,17 +113,51 @@ export default function Chat() {
 
   const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
   const isVerified = user?.phoneVerified || user?.phone_verified;
+  const isBuyer = deal?.seekerid == user.id;
+  const isSeller = deal?.providerid == user.id;
 
   return (
     <div className="screen active" style={{background:'var(--bg)', display:'flex', flexDirection:'column'}}>
       <div className="topbar">
         <div style={{cursor:'pointer',fontSize:'20px'}} onClick={()=>navigate(-1)}>‹</div>
         <div style={{flex:1, marginLeft:'15px'}}>
-          <div style={{fontSize:'15px', fontWeight:700}}>Chat Room</div>
-          <div style={{fontSize:'11px', color:'var(--green)'}}>● Active</div>
+          <div style={{fontSize:'15px', fontWeight:700}}>{chatInfo?.listingTitle || 'Chat Room'}</div>
+          <div style={{fontSize:'11px', color: deal?.status === 'completed' ? 'var(--green)' : 'var(--amber)'}}>
+            {deal?.status === 'completed' ? 'Deal Sealed ✅' : (deal ? 'HONOR DEAL WITHIN 72H ⏳' : 'Inquiry')}
+          </div>
         </div>
         <div className="icon-btn">📞</div>
       </div>
+
+      {deal && deal.status !== 'completed' && (
+        <div style={{padding:'12px 20px', background:'rgba(255,184,0,0.1)', borderBottom:'1px solid rgba(255,184,0,0.2)', textAlign:'center'}}>
+           <div style={{fontSize:'13px', fontWeight:700, marginBottom:'6px', color:'var(--amber)'}}>Ready to seal the trade?</div>
+           <div style={{fontSize:'11px', color:'var(--text-muted)', marginBottom:'10px'}}>Both parties must click OK to earn 5 Ubuntu Points!</div>
+           <div style={{display:'flex', gap:'10px', justifyContent:'center'}}>
+              {isBuyer ? (
+                <button 
+                  className="btn-sm" 
+                  disabled={deal.buyer_confirmed || loadingDeal}
+                  style={{background: deal.buyer_confirmed ? 'var(--green)' : 'var(--amber)', color:'#000', minWidth:'150px'}}
+                  onClick={() => confirmTrade('buyer')}
+                >
+                  {deal.buyer_confirmed ? '✅ You OK\'d Trade' : 'OK TRADE 🤝'}
+                </button>
+              ) : isSeller ? (
+                <button 
+                   className="btn-sm" 
+                   disabled={deal.seller_confirmed || loadingDeal}
+                   style={{background: deal.seller_confirmed ? 'var(--green)' : 'var(--amber)', color:'#000', minWidth:'150px'}}
+                   onClick={() => confirmTrade('seller')}
+                >
+                  {deal.seller_confirmed ? '✅ You OK\'d Trade' : 'OK TRADE 🤝'}
+                </button>
+              ) : (
+                <div style={{fontSize:'12px', color:'var(--amber)', fontWeight:700}}>[Admin View] Waiting on users to honor deal.</div>
+              )}
+           </div>
+        </div>
+      )}
 
       <div className="scroll-area" ref={scrollRef} style={{padding:'20px', display:'flex', flexDirection:'column', gap:'12px', background:'var(--bg)', flex:1}}>
         {history.length === 0 && (
@@ -99,7 +187,7 @@ export default function Chat() {
         ))}
       </div>
 
-      {isVerified ? (
+      {(isVerified || deal) ? (
         <div style={{padding:'12px 20px 24px', background:'var(--surface)', borderTop:'1px solid var(--border)', display:'flex', gap:'10px', alignItems:'center'}}>
           <div className="icon-btn">📎</div>
           <div style={{flex:1, background:'var(--surface2)', borderRadius:'100px', padding:'10px 18px', border:'1px solid var(--border)'}}>
@@ -138,3 +226,4 @@ export default function Chat() {
     </div>
   );
 }
+

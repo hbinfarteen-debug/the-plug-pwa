@@ -7,6 +7,20 @@ import { ALL_SUBURBS } from '../utils/suburbs';
 export default function Home({ showToast, t }) {
   const navigate = useNavigate();
   const [listings, setListings] = useState([]);
+  const [unreadNotes, setUnreadNotes] = useState(0);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('plug_user') || '{}');
+    if (user.id) {
+       fetch(`${API_BASE_URL}/api/notifications/${user.id}`)
+         .then(res => res.json())
+         .then(data => {
+            const count = Array.isArray(data) ? data.filter(n => !n.read).length : 0;
+            setUnreadNotes(count);
+         })
+         .catch(e => console.error(e));
+    }
+  }, []);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [filter, setFilter] = useState('all');
@@ -169,8 +183,10 @@ export default function Home({ showToast, t }) {
           style={{height:'22px', width:'auto', cursor:'pointer'}} 
         />
         <div style={{display:'flex',gap:'15px'}}>
-          <div className="icon-btn" onClick={() => navigate('/messages')} style={{position:'relative'}}>💬<div className="badge"></div></div>
-          <div className="icon-btn" onClick={() => navigate('/messages')}>🔔</div>
+          <div className="icon-btn" onClick={() => navigate('/messages')} style={{position:'relative'}}>💬</div>
+          <div className="icon-btn" onClick={() => navigate('/notifications')} style={{position:'relative'}}>
+            🔔{unreadNotes > 0 && <div className="badge" style={{top:'-2px', right:'-2px'}}>{unreadNotes}</div>}
+          </div>
         </div>
       </div>
       <div className="scroll-area">
@@ -228,7 +244,7 @@ export default function Home({ showToast, t }) {
                   <div className="see-all">{t.seeAll}</div>
                 </div>
                 <div className="urgency-rail">
-                  {filteredListings.slice(0, 4).map(l => {
+                  {filteredListings.filter(l => l.status === 'active').slice(0, 4).map(l => {
                     const boosted = l.is_boosted || l.isBoosted;
                     return (
                     <div key={l.id} className="urgency-card" style={boosted ? {borderColor:'var(--green)', boxShadow:'0 0 12px rgba(0,232,122,0.15)'} : {}} onClick={()=>navigate(`/detail/${l.id}`)}>
@@ -248,7 +264,7 @@ export default function Home({ showToast, t }) {
                         ) : (
                           l.type === 'item' ? '🎮' : '🌿'
                         )}
-                        <div className="urgency-timer">{getTimeRemaining(l.createdat, l.duration)}</div>
+                        <div className="urgency-timer">{l.status === 'active' ? getTimeRemaining(l.createdat, l.duration) : 'Ended'}</div>
                       </div>
                       <div className="urgency-info"><h5>{l.title}</h5><div className="urgency-bid">${l.type === 'item' ? (l.bidCount > 0 ? Number(l.price || 0).toFixed(2) : '0.00') : (l.price ? Number(l.price).toFixed(2) : 'Blind')}</div></div>
                     </div>

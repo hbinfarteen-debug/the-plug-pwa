@@ -10,7 +10,7 @@ let sqlite3;
 
 function initSqlite() {
   if (sqliteDb) return sqliteDb;
-  
+
   try {
     sqlite3 = require('sqlite3').verbose();
     const dbPath = path.join(__dirname, 'database.sqlite');
@@ -20,7 +20,7 @@ function initSqlite() {
     });
 
     sqliteDb.run('PRAGMA journal_mode=WAL');
-    
+
     // Initialize schema synchronously (simple tables)
     sqliteDb.serialize(() => {
       sqliteDb.run(`CREATE TABLE IF NOT EXISTS users (
@@ -125,6 +125,27 @@ function initSqlite() {
         poll_url TEXT,
         createdat TEXT DEFAULT (datetime('now'))
       )`);
+      sqliteDb.run(`CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        type TEXT,
+        related_id INTEGER,
+        read INTEGER DEFAULT 0,
+        createdat TEXT DEFAULT (datetime('now'))
+      )`);
+
+      // SQLite Migrations
+      sqliteDb.serialize(() => {
+        // Safe to run multiple times, SQLite ignores error if column exists OR we can check 
+        // (but SQLite Alter Table doesn't support IF NOT EXISTS till 3.3x)
+        sqliteDb.run(`ALTER TABLE deals ADD COLUMN buyer_confirmed INTEGER DEFAULT 0`, (err) => {});
+        sqliteDb.run(`ALTER TABLE deals ADD COLUMN seller_confirmed INTEGER DEFAULT 0`, (err) => {});
+        sqliteDb.run(`ALTER TABLE deals ADD COLUMN expires_at TEXT`, (err) => {});
+        sqliteDb.run(`ALTER TABLE deals ADD COLUMN points_deducted INTEGER DEFAULT 0`, (err) => {});
+      });
+
       console.log('SQLite Schema Initialized');
     });
     return sqliteDb;
@@ -273,7 +294,20 @@ if (USE_POSTGRES) {
           createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
-      
+
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS notifications (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          title TEXT NOT NULL,
+          message TEXT NOT NULL,
+          type TEXT,
+          related_id INTEGER,
+          read BOOLEAN DEFAULT false,
+          createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       // Migrations for existing deployments
       try {
         await client.query(`ALTER TABLE listings ADD COLUMN IF NOT EXISTS is_boosted BOOLEAN DEFAULT false`);
@@ -283,10 +317,16 @@ if (USE_POSTGRES) {
         await client.query(`ALTER TABLE payments ALTER COLUMN listing_id DROP NOT NULL`);
         await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS unlockedsuburbs_limit INTEGER DEFAULT 1`);
         await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS unlockedsuburbs TEXT DEFAULT '[]'`);
+        
+        // Deal confirmation migrations
+        await client.query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS buyer_confirmed BOOLEAN DEFAULT false`);
+        await client.query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS seller_confirmed BOOLEAN DEFAULT false`);
+        await client.query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP`);
+        await client.query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS points_deducted BOOLEAN DEFAULT false`);
       } catch (e) {
         console.error('Migration notice:', e.message);
       }
-      
+
       console.log('Postgres Schema Initialized (Lowercase)');
     } catch (err) {
       console.error('Schema initialization failed:', err);

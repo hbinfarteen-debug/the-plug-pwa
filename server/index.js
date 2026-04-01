@@ -261,9 +261,118 @@ app.get('/api/users/:id', async (req, res) => {
   }
 });
 
+// ==== Helper: Notification & Deals Logic ====
+async function createNotification(userId, title, message, type, relatedId) {
+  try {
+    await db.query(
+      'INSERT INTO notifications (user_id, title, message, type, related_id) VALUES ($1, $2, $3, $4, $5)',
+      [userId, title, message, type || 'general', relatedId || null]
+    );
+  } catch (err) { console.error('Notification error:', err); }
+}
+
+async function checkEndedListings() {
+  try {
+    // 1. Find active listings that should have ended
+    const expiredRes = await db.query(`
+      SELECT * FROM listings 
+      WHERE status = 'active' 
+      AND (
+        (CASE WHEN createdat LIKE '%-%' THEN datetime(createdat) ELSE createdat END) <= datetime('now', '-' || duration || ' hours')
+        OR
+        (createdat <= CURRENT_TIMESTAMP - (duration || ' hours')::interval)
+      )
+    `);
+
+    for (const listing of expiredRes.rows) {
+      // Find winner
+      const bidRes = await db.query(
+        'SELECT * FROM bids WHERE listingid = $1 ORDER BY amount DESC LIMIT 1',
+        [listing.id]
+      );
+      
+      if (bidRes.rows.length > 0) {
+        const winner = bidRes.rows[0];
+        const swapCode = Math.floor(1000 + Math.random() * 9000).toString();
+        const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+
+        // Create Deal
+        await db.query(
+          'INSERT INTO deals (listingid, seekerid, providerid, swapcode, status, expires_at) VALUES ($1, $2, $3, $4, $5, $6)',
+          [listing.id, winner.bidderid, listing.posterid, swapCode, 'pending', expiresAt]
+        );
+
+        // Update Listing Status
+        await db.query('UPDATE listings SET status = $1 WHERE id = $2', ['ended', listing.id]);
+
+        // Create Notification for Winner
+        await createNotification(
+          winner.bidderid, 
+          'You won the bid! 🎉', 
+          `Congratulations! You won "${listing.title}". Please honor the deal within 72 hrs or 5 ubuntu points will be deducted.`,
+          'deal_won',
+          listing.id
+        );
+
+        // Create Notification for Poster
+        await createNotification(
+          listing.posterid, 
+          'Bid ended - Winner found!', 
+          `Someone has won your plug "${listing.title}". Please honor the deal within 72 hrs or 5 ubuntu points will be deducted.`,
+          'bid_won',
+          listing.id
+        );
+        
+        // Auto-create chat if not exists
+        await db.query(
+          'INSERT INTO chats (listingid, buyerid, sellerid, lastmsg) SELECT $1, $2, $3, $4 WHERE NOT EXISTS (SELECT 1 FROM chats WHERE listingid=$1 AND buyerid=$2 AND sellerid=$3)',
+          [listing.id, winner.bidderid, listing.posterid, 'Deal created! Seal the trade here.']
+        );
+      } else {
+        // No bids, just end it
+        await db.query('UPDATE listings SET status = $1 WHERE id = $2', ['ended', listing.id]);
+      }
+    }
+
+    // 2. Check for deals older than 72hrs that aren't completed
+    // This is complex because we need to know WHO made it fall apart. 
+    // For now, if neither confirmed or only one did, we might need manual admin intervention or a simple rule.
+    // Rule: if 72hrs pass and it's still 'pending', admin is notified.
+    const stuckDeals = await db.query(`
+      SELECT d.*, l.title 
+      FROM deals d
+      JOIN listings l ON d.listingid = l.id
+      WHERE d.status = 'pending' 
+      AND d.points_deducted = 0
+      AND d.expires_at <= datetime('now')
+    `);
+
+    for (const deal of stuckDeals.rows) {
+       // Mark for admin to check
+       await db.query('UPDATE deals SET status = $1, points_deducted = 1 WHERE id = $2', ['disputed', deal.id]);
+       // Notify admin (mocked via notifications to admin user ids)
+       const admins = ['263715198745', '263775939688'];
+       for (const phone of admins) {
+          const admRes = await db.query('SELECT id FROM users WHERE phone = $1', [phone]);
+          if (admRes.rows[0]) {
+             await createNotification(admRes.rows[0].id, '⚠️ Stuck Deal Alert', `Deal #${deal.id} (${deal.title}) has expired 72hr window. Check chat to see who failed to honor it.`, 'admin_alert', deal.id);
+          }
+       }
+    }
+
+  } catch (err) {
+    console.error('checkEndedListings error:', err);
+  }
+}
+
+// Run cleanup every 10 mins (though we also call it on feed load)
+setInterval(checkEndedListings, 10 * 60 * 1000);
+
 // Listings
 app.get('/api/listings', async (req, res) => {
   try {
+    await checkEndedListings(); // Refresh active statuses
+
     const result = await db.query(`
       SELECT listings.*, 
              listings.posterid as "posterId", 
@@ -275,12 +384,91 @@ app.get('/api/listings', async (req, res) => {
       FROM listings 
       JOIN users ON listings.posterid = users.id 
       WHERE status = 'active' 
+      OR (status = 'ended' AND datetime(listings.createdat, '+' || listings.duration || ' hours', '+24 hours') > datetime('now'))
       ORDER BY listings.createdat DESC
     `);
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ==== Notifications ====
+app.get('/api/notifications/:userId', async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT * FROM notifications WHERE user_id = $1 ORDER BY createdat DESC LIMIT 20',
+      [req.params.userId]
+    );
+    res.json(result.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/notifications/read/:id', async (req, res) => {
+  try {
+    await db.query('UPDATE notifications SET read = 1 WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ==== Deals & Trade Confirmation ====
+app.get('/api/deals/:userId', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT d.*, l.title, l.price, l.type, 
+             u1.fullname as "seekerName", u2.fullname as "providerName"
+      FROM deals d
+      JOIN listings l ON d.listingid = l.id
+      JOIN users u1 ON d.seekerid = u1.id
+      JOIN users u2 ON d.providerid = u2.id
+      WHERE seekerid = $1 OR providerid = $1
+      ORDER BY d.createdat DESC
+    `, [req.params.userId]);
+    res.json(result.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/deals/:id/confirm', async (req, res) => {
+  const { userId, role } = req.body; // role: 'buyer' or 'seller'
+  try {
+    const dealRes = await db.query('SELECT * FROM deals WHERE id = $1', [req.params.id]);
+    if (dealRes.rows.length === 0) return res.status(404).json({ error: 'Deal not found' });
+    const deal = dealRes.rows[0];
+
+    if (role === 'buyer') {
+      await db.query('UPDATE deals SET buyer_confirmed = 1 WHERE id = $1', [deal.id]);
+    } else {
+      await db.query('UPDATE deals SET seller_confirmed = 1 WHERE id = $1', [deal.id]);
+    }
+
+    // Refresh deal
+    const updatedRes = await db.query('SELECT * FROM deals WHERE id = $1', [deal.id]);
+    const updatedDeal = updatedRes.rows[0];
+
+    if (updatedDeal.buyer_confirmed && updatedDeal.seller_confirmed) {
+      // Complete deal!
+      await db.query('UPDATE deals SET status = $1 WHERE id = $2', ['completed', deal.id]);
+      await db.query('UPDATE listings SET status = $1 WHERE id = $2', ['sold', deal.listingid]);
+      
+      // Award points
+      await db.query('UPDATE users SET ubuntupoints = ubuntupoints + 5 WHERE id = $1 OR id = $2', [deal.seekerid, deal.providerid]);
+      
+      await createNotification(deal.seekerid, 'Trade Successful! +5 Pts', 'You and the provider confirmed the trade. You earned 5 ubuntu points!', 'pts_gain', deal.id);
+      await createNotification(deal.providerid, 'Trade Successful! +5 Pts', 'You and the winner confirmed the trade. You earned 5 ubuntu points!', 'pts_gain', deal.id);
+    }
+
+    res.json({ success: true, deal: updatedDeal });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/deals/:id/deduct', async (req, res) => {
+  // Admin call only
+  const { targetId, reason } = req.body;
+  try {
+    await db.query('UPDATE users SET ubuntupoints = ubuntupoints - 5 WHERE id = $1', [targetId]);
+    await createNotification(targetId, 'Points Deducted - 5 Pts', `Your points were deducted due to: ${reason}`, 'pts_loss', req.params.id);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get('/api/listings/:id', async (req, res) => {
@@ -342,6 +530,12 @@ app.post('/api/listings/:id/bid', async (req, res) => {
   const listingId = req.params.id;
   
   try {
+    const listing = await db.query('SELECT status FROM listings WHERE id = $1', [listingId]);
+    if (listing.rows.length === 0) return res.status(404).json({ error: 'Listing not found' });
+    if (listing.rows[0].status !== 'active') {
+      return res.status(400).json({ error: 'This plug has ended. No more bids allowed!' });
+    }
+
     await db.query(
       'INSERT INTO bids (listingid, bidderid, amount) VALUES ($1, $2, $3)',
       [listingId, bidderId, amount]

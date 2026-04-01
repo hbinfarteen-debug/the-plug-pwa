@@ -13,6 +13,7 @@ import Detail from './screens/Detail';
 import Admin from './screens/Admin';
 import Dispute from './screens/Dispute';
 import Settings from './screens/Settings';
+import Notifications from './screens/Notifications';
 import SuccessOverlay from './components/SuccessOverlay';
 import PostModal from './components/PostModal';
 import { useState, useEffect } from 'react';
@@ -43,7 +44,7 @@ function FloatingActionButton({ onShowPost }) {
   const loc = useLocation();
   const p = loc.pathname;
   
-  if (p === '/' || p === '/onboard' || p === '/settings' || p.startsWith('/detail/') || p.startsWith('/post') || p.startsWith('/admin') || p.startsWith('/dispute') || p.startsWith('/profile/') || p.startsWith('/chat/')) {
+  if (p === '/' || p === '/onboard' || p === '/settings' || p.startsWith('/detail/') || p.startsWith('/post') || p.startsWith('/admin') || p.startsWith('/dispute') || p.startsWith('/profile/') || p.startsWith('/chat/') || p === '/notifications') {
       return null;
   }
 
@@ -90,6 +91,7 @@ function App() {
           <Route path="/admin" element={<Admin showToast={showToast} t={t} />} />
           <Route path="/dispute" element={<Dispute showToast={showToast} t={t} />} />
           <Route path="/settings" element={<Settings showToast={showToast} t={t} setLanguage={setLanguage} language={language} />} />
+          <Route path="/notifications" element={<Notifications showToast={showToast} t={t} />} />
         </Routes>
         
         <BottomNav />

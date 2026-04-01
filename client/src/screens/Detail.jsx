@@ -172,6 +172,10 @@ export default function Detail({ showToast, t }) {
                 const isVerified = user.phoneVerified || user.phone_verified;
                 const isOwner = Number(user.id) === Number(listing.posterId);
 
+                if (listing.status !== 'active') {
+                  return <button className="btn-primary" style={{padding:'12px 18px', background:'var(--surface2)', color:'var(--red)', border:'1px solid var(--red)', cursor:'not-allowed'}} disabled>Closed</button>;
+                }
+
                 if (isOwner) {
                   return <button className="btn-primary" style={{padding:'12px 18px', background:'var(--surface2)', color:'var(--text-muted)', border:'1px solid var(--border)', cursor:'not-allowed'}} disabled>Your Plug</button>;
                 }
