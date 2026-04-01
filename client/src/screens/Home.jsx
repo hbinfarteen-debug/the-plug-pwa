@@ -106,7 +106,7 @@ export default function Home({ showToast, t }) {
   // Filter based on user's unlocked areas and selected type
   const getUnlockedList = () => {
     if (!user) return [];
-    const isAdmin = user?.phone === '263715198745' || user?.phone === '+263715198745' || 
+    const isAdmin = user?.role === 'admin' || user?.phone === '263715198745' || user?.phone === '+263715198745' || 
                     user?.phone === '263775939688' || user?.phone === '+263775939688';
 
     if (isAdmin) {
@@ -125,7 +125,7 @@ export default function Home({ showToast, t }) {
     }
   };
 
-  const isAdmin = user?.phone === '263715198745' || user?.phone === '+263715198745' || 
+  const isAdmin = user?.role === 'admin' || user?.phone === '263715198745' || user?.phone === '+263715198745' || 
                   user?.phone === '263775939688' || user?.phone === '+263775939688';
 
   const unlockedList = getUnlockedList();

@@ -24,7 +24,7 @@ export default function PostListing({ showToast }) {
   const toggleSuburb = (loc) => {
     const u = JSON.parse(localStorage.getItem('plug_user') || '{}');
     const home = u.homeBase || u.homebase;
-    const isAdmin = u.phone === '263715198745' || u.phone === '+263715198745' || 
+    const isAdmin = u.role === 'admin' || u.phone === '263715198745' || u.phone === '+263715198745' || 
                     u.phone === '263775939688' || u.phone === '+263775939688';
     
     const unlocked = typeof u.unlockedSuburbs === 'string' ? JSON.parse(u.unlockedSuburbs || '[]') : (u.unlockedSuburbs || []);
@@ -171,7 +171,7 @@ export default function PostListing({ showToast }) {
               {(() => {
                 const u = JSON.parse(localStorage.getItem('plug_user') || '{}');
                 const home = u.homeBase || u.homebase;
-                const isAdmin = u.phone === '263715198745' || u.phone === '+263715198745' || 
+                const isAdmin = u.role === 'admin' || u.phone === '263715198745' || u.phone === '+263715198745' || 
                                 u.phone === '263775939688' || u.phone === '+263775939688';
                 
                 let pool = isAdmin ? ALL_SUBURBS : [];
