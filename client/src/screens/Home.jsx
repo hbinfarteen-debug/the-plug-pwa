@@ -250,7 +250,7 @@ export default function Home({ showToast, t }) {
                         )}
                         <div className="urgency-timer">{getTimeRemaining(l.createdat, l.duration)}</div>
                       </div>
-                      <div className="urgency-info"><h5>{l.title}</h5><div className="urgency-bid">${l.price || 'Blind'}</div></div>
+                      <div className="urgency-info"><h5>{l.title}</h5><div className="urgency-bid">${l.type === 'item' ? (l.bidCount > 0 ? Number(l.price || 0).toFixed(2) : '0.00') : (l.price ? Number(l.price).toFixed(2) : 'Blind')}</div></div>
                     </div>
                   )})}
                 </div>
@@ -283,7 +283,7 @@ export default function Home({ showToast, t }) {
                     </div>
                     <div className="listing-body">
                       <h4>{l.title}</h4>
-                      <div className="listing-meta"><span className="listing-price">${(l.price || 0).toFixed(2)}</span><span className="listing-time">{getTimeRemaining(l.createdat, l.duration)} {t.left}</span></div>
+                      <div className="listing-meta"><span className="listing-price">${l.type === 'item' ? (l.bidCount > 0 ? Number(l.price || 0).toFixed(2) : '0.00') : Number(l.price || 0).toFixed(2)}</span><span className="listing-time">{getTimeRemaining(l.createdat, l.duration)} {t.left}</span></div>
                       <div className="listing-suburb">📍 {l.suburb}</div>
                       <div className="ubuntu-chip"><div className="dot dot-g"></div> {l.ubuntupoints} {t.pts} · {l.fullname}</div>
                     </div>

@@ -237,7 +237,25 @@ app.get('/api/users/:id', async (req, res) => {
       [req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    res.json(result.rows[0]);
+    
+    // get user stats
+    const statsRes = await db.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM listings WHERE posterid = $1 AND type='item' AND status='sold') as deals,
+        (SELECT COUNT(*) FROM listings WHERE posterid = $1 AND type='gig' AND status='sold') as jobs,
+        (SELECT COUNT(*) FROM listings WHERE posterid = $1 AND status='active') as listed
+    `, [req.params.id]);
+
+    const stats = statsRes.rows[0];
+    const user = result.rows[0];
+    
+    user.stats = {
+      deals: parseInt(stats.deals) || 0,
+      jobs: parseInt(stats.jobs) || 0,
+      listed: parseInt(stats.listed) || 0
+    };
+
+    res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -252,6 +270,7 @@ app.get('/api/listings', async (req, res) => {
              listings.imageurls as "imageUrls", 
              listings.is16plusfriendly as "is16PlusFriendly", 
              listings.createdat as "createdAt",
+             (SELECT COUNT(*) FROM bids WHERE listingid = listings.id) as "bidCount",
              users.fullname, users.ubuntupoints, users.homebase 
       FROM listings 
       JOIN users ON listings.posterid = users.id 

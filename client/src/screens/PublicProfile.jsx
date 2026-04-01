@@ -62,23 +62,20 @@ export default function PublicProfile({ showToast }) {
             )}
           </div>
         </div>
-
-        {user?.stats?.sold > 0 && (
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="num">{user.stats.sold || 0}</div>
-              <div className="lbl">Sold</div>
-            </div>
-            <div className="stat-card">
-              <div className="num">{user.stats.active || 0}</div>
-              <div className="lbl">Active</div>
-            </div>
-            <div className="stat-card">
-              <div className="num">{user.stats.successRate || 100}%</div>
-              <div className="lbl">Success</div>
-            </div>
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="num">{user?.stats?.deals || 0}</div>
+            <div className="lbl">Deals</div>
           </div>
-        )}
+          <div className="stat-card">
+            <div className="num">{user?.stats?.jobs || 0}</div>
+            <div className="lbl">Jobs</div>
+          </div>
+          <div className="stat-card">
+            <div className="num">{user?.stats?.listed || 0}</div>
+            <div className="lbl">Listed</div>
+          </div>
+        </div>
 
         <div className="section-header">
           <div className="section-title">Ubuntu Badges</div>
