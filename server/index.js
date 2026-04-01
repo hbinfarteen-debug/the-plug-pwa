@@ -600,6 +600,15 @@ app.get('/api/users/:id/plugs', async (req, res) => {
   }
 });
 
+app.delete('/api/listings/:id', async (req, res) => {
+  try {
+    await db.query('DELETE FROM listings WHERE id = $1', [req.params.id]);
+    res.json({ success: true, message: 'Listing deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Messaging
 app.get('/api/chats/:userId', async (req, res) => {
   const { userId } = req.params;

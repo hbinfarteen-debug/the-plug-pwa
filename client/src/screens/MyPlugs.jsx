@@ -138,6 +138,33 @@ export default function MyPlugs({ showToast, t, onSuccess }) {
     return true;
   });
 
+  const canManage = (createdAt) => {
+    try {
+      const created = new Date(createdAt);
+      const now = new Date();
+      const diffMs = now - created;
+      return diffMs < (60 * 60 * 1000); // 1 hour
+    } catch(e) { return false; }
+  };
+
+  const deleteListing = async (listingId) => {
+    if (!confirm('Are you sure you want to delete this plug?')) return;
+    try {
+       const res = await fetch(`${API_BASE_URL}/api/listings/${listingId}`, {
+         method: 'DELETE'
+       });
+       if (res.ok) {
+         showToast('Listing deleted', 'success');
+         setPlugs(prev => ({
+           ...prev,
+           hustle: prev.hustle.filter(h => h.id !== listingId)
+         }));
+       }
+    } catch(e) {
+      showToast('Error deleting listing', 'error');
+    }
+  };
+
   if (loading) return <div className="screen active"><div style={{padding:'20px',textAlign:'center'}}>Loading your plugs...</div></div>;
 
   // Color palette for bid cards
@@ -288,16 +315,52 @@ export default function MyPlugs({ showToast, t, onSuccess }) {
                     </div>
                     <div className={`pstatus ${h.status === 'active' ? 's-active' : 's-pending'}`}>{h.status.toUpperCase()}</div>
                   </div>
-                  <div className="plug-acts" style={{marginTop:'10px'}}>
-                     <button className="btn-sm s" onClick={()=>navigate(`/detail/${h.id}`)}>{t.manage}</button>
-                     {!boosted && (
-                       <button className="btn-sm p" style={{background:'rgba(255,184,0,0.15)', color:'var(--amber)', border:'1px solid rgba(255,184,0,0.3)'}} onClick={() => {
+                  <div className="plug-acts" style={{marginTop:'10px', display:'flex', flexDirection:'column', gap:'8px'}}>
+                    <div style={{display:'flex', gap:'8px', width:'100%'}}>
+                      <button 
+                        className="btn-sm s" 
+                        style={{flex:1}} 
+                        onClick={() => {
+                          if (!canManage(h.createdat || h.createdAt)) {
+                            showToast('Edit window closed (1hr limit reached)', 'error');
+                            return;
+                          }
+                          navigate(`/detail/${h.id}`);
+                        }}
+                      >
+                        {t.manage}
+                      </button>
+                      <button 
+                         className="btn-sm d" 
+                         style={{
+                           background:'rgba(255,59,59,0.1)', color:'var(--red)', border:'1px solid rgba(255,59,59,0.2)',
+                           minWidth:'40px', padding:'0', justifyContent:'center'
+                         }}
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           if (!canManage(h.createdat || h.createdAt)) {
+                             showToast('Delete window closed (1hr limit reached)', 'error');
+                             return;
+                           }
+                           deleteListing(h.id);
+                         }}
+                      >
+                        🗑
+                      </button>
+                    </div>
+                    {!boosted && (
+                       <button className="btn-sm p" style={{width:'100%', background:'rgba(255,184,0,0.15)', color:'var(--amber)', border:'1px solid rgba(255,184,0,0.3)', justifyContent:'center'}} onClick={() => {
                          setBoostingPlug(h);
                          setShowBoostModal(true);
                        }}>
                          🚀 {t.boost}
                        </button>
-                     )}
+                    )}
+                    {!canManage(h.createdat || h.createdAt) && (
+                      <div style={{fontSize:'10px', color:'var(--text-muted)', textAlign:'center', marginTop:'2px'}}>
+                        1hr Lock active: Edit/Delete disabled 🔒
+                      </div>
+                    )}
                   </div>
                 </div>
               );
