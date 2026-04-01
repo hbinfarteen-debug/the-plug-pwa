@@ -255,6 +255,13 @@ export default function Admin({ showToast }) {
         >
           Won Bids
         </div>
+        <div 
+          className={`nav-item ${activeTab==='disputes'?'active':''}`} 
+          style={{flex:1, textAlign:'center', padding:'15px 0', fontSize:'13px', fontWeight:700, opacity:activeTab==='disputes'?1:0.5, borderBottom:activeTab==='disputes'?'2px solid var(--amber)':'none'}}
+          onClick={()=>setActiveTab('disputes')}
+        >
+          Disputes
+        </div>
       </div>
 
       <div className="scroll-area">
