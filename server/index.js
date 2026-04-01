@@ -375,7 +375,7 @@ app.get('/api/listings', async (req, res) => {
       FROM listings 
       JOIN users ON listings.posterid = users.id 
       WHERE status = 'active' 
-      OR (status = 'ended' AND listings.createdat + (listings.duration + 24 || ' hours')::interval > NOW())
+      OR (status = 'ended' AND listings.createdat + (listings.duration + 72) * interval '1 hour' > NOW())
       ORDER BY listings.createdat DESC`
       : `SELECT listings.*, 
              listings.posterid as "posterId", 
@@ -387,7 +387,7 @@ app.get('/api/listings', async (req, res) => {
       FROM listings 
       JOIN users ON listings.posterid = users.id 
       WHERE status = 'active' 
-      OR (status = 'ended' AND datetime(listings.createdat, '+' || (listings.duration + 24) || ' hours') > datetime('now'))
+      OR (status = 'ended' AND datetime(listings.createdat, '+' || (listings.duration + 72) || ' hours') > datetime('now'))
       ORDER BY listings.createdat DESC`;
 
     const result = await db.query(feedQuery);

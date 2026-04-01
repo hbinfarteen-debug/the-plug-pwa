@@ -299,7 +299,12 @@ export default function Home({ showToast, t }) {
                     </div>
                     <div className="listing-body">
                       <h4>{l.title}</h4>
-                      <div className="listing-meta"><span className="listing-price">${l.type === 'item' ? (l.bidCount > 0 ? Number(l.price || 0).toFixed(2) : '0.00') : Number(l.price || 0).toFixed(2)}</span><span className="listing-time">{getTimeRemaining(l.createdat, l.duration)} {t.left}</span></div>
+                      <div className="listing-meta">
+                        <span className="listing-price">${l.type === 'item' ? (l.bidCount > 0 ? Number(l.price || 0).toFixed(2) : '0.00') : Number(l.price || 0).toFixed(2)}</span>
+                        <span className="listing-time" style={l.status !== 'active' ? {color:'var(--red)'} : {}}>
+                          {l.status === 'active' ? `${getTimeRemaining(l.createdat, l.duration)} ${t.left}` : l.status === 'sold' ? 'SOLD ✅' : 'ENDED'}
+                        </span>
+                      </div>
                       <div className="listing-suburb">📍 {l.suburb}</div>
                       <div className="ubuntu-chip"><div className="dot dot-g"></div> {l.ubuntupoints} {t.pts} · {l.fullname}</div>
                     </div>
