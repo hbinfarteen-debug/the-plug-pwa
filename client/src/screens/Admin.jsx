@@ -448,7 +448,7 @@ export default function Admin({ showToast }) {
                 const isEnded = diffMs > 0;
 
                 return (
-                  <div key={b.id} className="listing-card" style={{padding:'14px', border: hrs >= 72 ? '2px solid var(--red)' : '1px solid var(--border)'}}>
+                  <div key={b.id} className="listing-card" style={{padding:'14px', border: hrs >= 72 ? '2px solid var(--red)' : '1px solid var(--border)', flexDirection: 'column'}}>
                     <div style={{display:'flex', justifyContent:'space-between', marginBottom:'8px'}}>
                       <div style={{fontWeight:700}}>{b.title}</div>
                       <div style={{fontSize:'12px', background:b.status === 'active' ? 'rgba(0,232,122,0.1)' : 'rgba(255,107,107,0.1)', color:b.status === 'active' ? 'var(--green)' : 'var(--red)', padding:'2px 8px', borderRadius:'8px', fontWeight:700}}>
