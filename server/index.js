@@ -241,8 +241,8 @@ app.get('/api/users/:id', async (req, res) => {
     // get user stats
     const statsRes = await db.query(`
       SELECT 
-        (SELECT COUNT(*) FROM listings WHERE posterid = $1 AND type='item' AND status='sold') as deals,
-        (SELECT COUNT(*) FROM listings WHERE posterid = $1 AND type='gig' AND status='sold') as jobs,
+        (SELECT COUNT(*) FROM listings WHERE posterid = $1 AND status='sold') as items_sold,
+        (SELECT COUNT(*) FROM deals WHERE (seekerid = $1 OR providerid = $1) AND status='completed') as completed_deals,
         (SELECT COUNT(*) FROM listings WHERE posterid = $1 AND status='active') as listed
     `, [req.params.id]);
 
@@ -250,8 +250,7 @@ app.get('/api/users/:id', async (req, res) => {
     const user = result.rows[0];
     
     user.stats = {
-      deals: parseInt(stats.deals) || 0,
-      jobs: parseInt(stats.jobs) || 0,
+      deals: (parseInt(stats.items_sold) || 0) + (parseInt(stats.completed_deals) || 0),
       listed: parseInt(stats.listed) || 0
     };
 

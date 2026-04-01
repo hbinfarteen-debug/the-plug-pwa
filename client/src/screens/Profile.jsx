@@ -60,10 +60,17 @@ export default function Profile({ showToast }) {
           <div className="profile-name">{user?.fullname || 'Loading...'}</div>
           <div className="profile-suburb">📍 {user?.homebase || '...'} · Bulawayo</div>
           <div style={{marginTop:'8px',display:'flex',gap:'8px',justifyContent:'center',flexWrap:'wrap'}}>
-            <span className="ubuntu-chip"><div className="dot dot-g"></div> Trusted Plug</span>
+            {(() => {
+              const pts = user?.ubuntupoints || 0;
+              const deals = user?.stats?.deals || 0;
+              if (pts < 80) return <span className="ubuntu-chip" style={{borderColor:'var(--red)', color:'var(--red)'}}><div className="dot" style={{background:'var(--red)'}}></div> Shakey Plug ⚠️</span>;
+              if (pts < 90) return <span className="ubuntu-chip" style={{borderColor:'#FF9500', color:'#FF9500'}}><div className="dot" style={{background:'#FF9500'}}></div> Dangerous Plug 🚨</span>;
+              if (deals < 5) return <span className="ubuntu-chip" style={{borderColor:'var(--text-muted)', color:'var(--text-muted)'}}><div className="dot" style={{background:'var(--text-muted)'}}></div> New Plug</span>;
+              return <span className="ubuntu-chip"><div className="dot dot-g"></div> Trusted Plug</span>;
+            })()}
             {user?.phoneVerified || user?.phone_verified ? (
               <span className="ubuntu-chip" style={{borderColor:'var(--green)', color:'var(--green)'}}>
-                <div className="dot dot-g"></div> ✅ ID Verified
+                <div className="dot dot-g"></div> ✅ Verified
               </span>
             ) : (
               <span 
@@ -71,7 +78,7 @@ export default function Profile({ showToast }) {
                 style={{borderColor:'#ff6b6b', color:'#ff6b6b', cursor:'pointer'}}
                 onClick={() => navigate('/settings')}
               >
-                ⚠️ Not Verified
+                ⚠️ Unverified
               </span>
             )}
           </div>

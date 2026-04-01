@@ -28,7 +28,6 @@ export default function PublicProfile({ showToast }) {
   if (loading) return <div className="screen active"><div className="scroll-area">Loading profile...</div></div>;
   if (!user) return <div className="screen active"><div className="scroll-area">User not found</div></div>;
 
-  const reputation = (user.ubuntuPoints || user.ubuntupoints || 0) > 200 ? 'Elite Plug' : (user.ubuntuPoints || user.ubuntupoints || 0) > 120 ? 'Trusted Plug' : 'New Plug';
 
   return (
     <div className="screen active">
@@ -48,16 +47,22 @@ export default function PublicProfile({ showToast }) {
             )}
           </div>
           <h2 className="profile-name">{user.fullName || user.fullname || 'Plug Seller'}</h2>
-          <div className="profile-suburb">📍 {user.homeBase || user.homebase || '...'} · <span style={{color:'var(--green)', fontWeight:700}}>{user.ubuntuPoints || user.ubuntupoints || 0} pts</span></div>
           <div style={{marginTop:'10px', display:'flex', gap:'8px', justifyContent:'center', flexWrap:'wrap'}}>
-            <span className="badge-chip green">⭐ {reputation}</span>
+            {(() => {
+              const pts = user?.ubuntupoints || 0;
+              const deals = user?.stats?.deals || 0;
+              if (pts < 80) return <span className="badge-chip" style={{borderColor:'var(--red)', color:'var(--red)', background:'rgba(255,107,107,0.1)'}}>⚠️ Shakey Plug</span>;
+              if (pts < 90) return <span className="badge-chip" style={{borderColor:'#FF9500', color:'#FF9500', background:'rgba(255,149,0,0.1)'}}>🚨 Dangerous Plug</span>;
+              if (deals < 5) return <span className="badge-chip" style={{borderColor:'var(--text-muted)', color:'var(--text-muted)', background:'rgba(160,160,160,0.1)'}}>New Plug</span>;
+              return <span className="badge-chip green">⭐ Trusted Plug</span>;
+            })()}
             {user?.phone_verified || user?.phoneVerified ? (
               <span className="badge-chip" style={{background:'rgba(0,255,136,0.15)', color:'var(--green)', border:'1px solid var(--green)'}}>
-                ✅ ID Verified
+                ✅ Verified
               </span>
             ) : (
               <span className="badge-chip" style={{background:'rgba(255,107,107,0.15)', color:'#ff6b6b', border:'1px solid #ff6b6b'}}>
-                ⚠️ Not Verified
+                ⚠️ Unverified
               </span>
             )}
           </div>
