@@ -38,7 +38,7 @@ function formatTimeAgo(dateStr) {
   } catch(e) { return ''; }
 }
 
-export default function Messages() {
+export default function Messages({ showToast, t }) {
   const navigate = useNavigate();
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);

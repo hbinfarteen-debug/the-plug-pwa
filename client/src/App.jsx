@@ -85,8 +85,8 @@ function App() {
           <Route path="/profile/:id" element={<PublicProfile showToast={showToast} t={t} />} />
           <Route path="/myplugs" element={<MyPlugs showToast={showToast} t={t} onSuccess={() => setSuccessData({})} />} />
           <Route path="/profile" element={<Profile showToast={showToast} t={t} />} />
-          <Route path="/messages" element={<Messages t={t} />} />
-          <Route path="/chat/:id" element={<Chat t={t} />} />
+          <Route path="/messages" element={<Messages showToast={showToast} t={t} />} />
+          <Route path="/chat/:id" element={<Chat showToast={showToast} t={t} />} />
           <Route path="/detail/:id" element={<Detail showToast={showToast} t={t} />} />
           <Route path="/admin" element={<Admin showToast={showToast} t={t} />} />
           <Route path="/dispute" element={<Dispute showToast={showToast} t={t} />} />

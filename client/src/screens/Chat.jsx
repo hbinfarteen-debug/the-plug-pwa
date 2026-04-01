@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 
-export default function Chat() {
+export default function Chat({ showToast, t }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [msg, setMsg] = useState('');
