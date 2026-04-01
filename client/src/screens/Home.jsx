@@ -83,10 +83,13 @@ export default function Home({ showToast, t }) {
             showToast('Account suspended', 'error');
             localStorage.clear();
             navigate('/onboard');
-          } else if (dbUser.phoneVerified !== user.phoneVerified) {
-             const updated = { ...user, phoneVerified: dbUser.phoneVerified };
-             localStorage.setItem('plug_user', JSON.stringify(updated));
-             setUser(updated);
+          } else {
+             // Always sync all user data (points, verification, etc.)
+             const updated = { ...user, ...dbUser };
+             if (JSON.stringify(updated) !== JSON.stringify(user)) {
+               localStorage.setItem('plug_user', JSON.stringify(updated));
+               setUser(updated);
+             }
           }
         })
         .catch(() => {});
