@@ -199,7 +199,9 @@ export default function Chat() {
           </div>
         )}
         {history.map((m, i) => {
-          const isAdmin = m.senderRole === 'admin' || m.senderPhone === '263715198745' || m.senderPhone === '263775939688';
+          const isAdminAccount = m.senderRole === 'admin' || m.senderPhone === '263715198745' || m.senderPhone === '263775939688';
+          const isParticipant = (chatInfo?.buyerId === m.senderId || chatInfo?.sellerId === m.senderId);
+          const renderAsAdmin = isAdminAccount && !isParticipant;
           const isSender = m.senderId === user.id;
           
           return (
@@ -209,14 +211,14 @@ export default function Chat() {
             borderRadius:'18px',
             fontSize:'14px',
             lineHeight:1.5,
-            alignSelf: isAdmin ? 'center' : (isSender ? 'flex-end' : 'flex-start'),
-            background: isAdmin ? 'rgba(255, 69, 58, 0.15)' : (isSender ? 'var(--green)' : 'var(--surface2)'),
-            color: isAdmin ? 'var(--red)' : (isSender ? '#000' : 'var(--text)'),
-            border: isAdmin ? '1px solid var(--red)' : (isSender ? 'none' : '1px solid var(--border)'),
-            borderBottomRightRadius: isAdmin ? '18px' : (isSender ? '4px' : '18px'),
-            borderBottomLeftRadius: isAdmin ? '18px' : (!isSender ? '4px' : '18px'),
+            alignSelf: renderAsAdmin ? 'center' : (isSender ? 'flex-end' : 'flex-start'),
+            background: renderAsAdmin ? 'rgba(255, 69, 58, 0.15)' : (isSender ? 'var(--green)' : 'var(--surface2)'),
+            color: renderAsAdmin ? 'var(--red)' : (isSender ? '#000' : 'var(--text)'),
+            border: renderAsAdmin ? '1px solid var(--red)' : (isSender ? 'none' : '1px solid var(--border)'),
+            borderBottomRightRadius: renderAsAdmin ? '18px' : (isSender ? '4px' : '18px'),
+            borderBottomLeftRadius: renderAsAdmin ? '18px' : (!isSender ? '4px' : '18px'),
           }}>
-            {isAdmin ? (
+            {renderAsAdmin ? (
                <div style={{fontSize:'11px', fontWeight:800, marginBottom:'4px', color:'var(--red)'}}>🚨 ADMIN</div>
             ) : (
                <div style={{fontSize:'10px', fontWeight:700, marginBottom:'4px', opacity:0.6}}>
