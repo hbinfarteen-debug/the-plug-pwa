@@ -204,7 +204,7 @@ export default function Chat() {
           const roleToCheck = m.senderRole || (isSender ? user.role : null);
           
           const isAdminAccount = roleToCheck === 'admin' || phoneToCheck === '263715198745' || phoneToCheck === '263775939688';
-          const isParticipant = (chatInfo?.buyerId === m.senderId || chatInfo?.sellerId === m.senderId);
+          const isParticipant = (Number(chatInfo?.buyerId) === Number(m.senderId) || Number(chatInfo?.sellerId) === Number(m.senderId));
           const renderAsAdmin = isAdminAccount && !isParticipant;
           
           return (
@@ -220,6 +220,8 @@ export default function Chat() {
             border: renderAsAdmin ? '1px solid var(--red)' : (isSender ? 'none' : '1px solid var(--border)'),
             borderBottomRightRadius: renderAsAdmin ? '18px' : (isSender ? '4px' : '18px'),
             borderBottomLeftRadius: renderAsAdmin ? '18px' : (!isSender ? '4px' : '18px'),
+            width: renderAsAdmin ? '100%' : 'auto',
+            textAlign: renderAsAdmin ? 'center' : 'left'
           }}>
             {renderAsAdmin ? (
                <div style={{fontSize:'11px', fontWeight:800, marginBottom:'4px', color:'var(--red)'}}>🚨 ADMIN</div>
@@ -229,7 +231,7 @@ export default function Chat() {
                </div>
             )}
             <div>{m.text}</div>
-            <div style={{fontSize:'10px', marginTop:'4px', opacity:0.6, textAlign:'right'}}>
+            <div style={{fontSize:'10px', marginTop:'4px', opacity:0.6, textAlign: renderAsAdmin ? 'center' : 'right'}}>
               {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
             </div>
           </div>
