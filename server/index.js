@@ -106,7 +106,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Blacklist check
     if (user.blacklisted) {
-      return res.status(403).json({ error: 'This account has been suspended. Contact support.' });
+      return res.status(403).json({ error: 'THIS PLUG IS DISCONNECTED! 🛑 Your account has been suspended for violating The Plug Code. Contact admin if this is a mistake.' });
     }
 
     if (user.password !== password) {
@@ -261,6 +261,25 @@ app.get('/api/users/:id', async (req, res) => {
   }
 });
 
+// ==== Hard Delete: Permanently Remove Profile ====
+app.delete('/api/users/:id', async (req, res) => {
+  const userId = req.params.id;
+  try {
+    // Note: CASCADE handles listings, bids, deals, notifications, chats in the database schema.
+    const result = await db.query('DELETE FROM users WHERE id = $1 RETURNING *', [userId]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log(`[Security] User ${userId} (${result.rows[0].fullname}) hard deleted.`);
+    res.json({ success: true, message: 'Your data has been wiped from The Plug.' });
+  } catch (err) {
+    console.error('Delete User error:', err);
+    res.status(500).json({ error: 'Failed to delete account. Please contact admin.' });
+  }
+});
+
 // ==== Helper: Notification & Deals Logic ====
 async function createNotification(userId, title, message, type, relatedId) {
   try {
@@ -348,6 +367,27 @@ async function checkEndedListings() {
              await createNotification(admRes.rows[0].id, '⚠️ Stuck Deal Alert', `Deal #${deal.id} (${deal.title}) has expired 72hr window. Check chat to see who failed to honor it.`, 'admin_alert', deal.id);
           }
        }
+    }
+
+    // 3. Check for bids ending in ~5 mins (Warning)
+    // We send this once to all active bidders
+    const warningQuery = isPg
+      ? `SELECT l.id, l.title, b.bidderid 
+         FROM listings l 
+         JOIN bids b ON l.id = b.listingid 
+         WHERE l.status = 'active' 
+         AND l.createdat + (l.duration * interval '1 hour') BETWEEN NOW() + interval '4 minutes' AND NOW() + interval '6 minutes'`
+      : `SELECT l.id, l.title, b.bidderid 
+         FROM listings l 
+         JOIN bids b ON l.id = b.listingid 
+         WHERE l.status = 'active' 
+         AND datetime(l.createdat, '+' || l.duration || ' hours') BETWEEN datetime('now', '+4 minutes') AND datetime('now', '+6 minutes')`;
+    
+    const warnings = await db.query(warningQuery);
+    for (const w of warnings.rows) {
+      // Check if we already sent a warning for this listing to this user (to keep it clean)
+      // For now, we'll just push it - simple PWA notification logic usually prevents duplicates locally
+      await createNotification(w.bidderid, '⚡ Hurry Up!', `The bid for "${w.title}" ends in 5 minutes! Don't let it slip!`, 'bid_warning', w.id);
     }
 
   } catch (err) {

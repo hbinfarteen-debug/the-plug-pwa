@@ -42,9 +42,28 @@ export default function Settings({ showToast, t, language, setLanguage }) {
     }
   };
 
-  const deleteAccount = () => {
-    if (confirm("Are you sure you want to delete your Plug? This is irreversible.")) {
-      showToast('Processing deletion request... (24h)', 'error');
+  const deleteAccount = async () => {
+    if (!confirm("CRITICAL: This will permanently wipe your profile, listings, history, and Ubuntu Points. This action cannot be reversed. Are you absolutely sure?")) return;
+    
+    setUpdating(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/${user.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        showToast('Your digital footprint has been wiped. Farewell! 👋🏾', 'success');
+        localStorage.clear();
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1500);
+      } else {
+        showToast(data.error || 'Failed to delete account. Please contact admin.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Network error. User deletion failed.', 'error');
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -197,7 +216,7 @@ export default function Settings({ showToast, t, language, setLanguage }) {
 
         <div className="settings-item" style={{color:'var(--red)'}} onClick={deleteAccount}>
           <div className="settings-label">Delete Account</div>
-          <div className="settings-val" style={{color:'var(--red)'}}>Permanently remove profile</div>
+          <div className="settings-val" style={{color:'var(--red)'}}>{updating ? 'Processing...' : 'Permanently remove profile'}</div>
         </div>
 
         <div className="section-header"><div className="section-title">🛠️ TROUBLESHOOTING</div></div>
