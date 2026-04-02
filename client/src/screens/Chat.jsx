@@ -115,7 +115,7 @@ export default function Chat({ showToast, t }) {
           chatId: id,
           senderId: user.id,
           text: msg,
-          isAdmin: user.role === 'admin'
+          isAdmin: false // Never send from Chat.jsx as official admin mode
         })
       });
       if (res.ok) {
