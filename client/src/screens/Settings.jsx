@@ -273,11 +273,15 @@ export default function Settings({ showToast, t, language, setLanguage }) {
         <p style={{textAlign:'center', fontSize:'13px', color:'var(--text-muted)', fontWeight:700, marginBottom:'8px', marginTop:'20px'}}>CONNECT WITH DEVELOPER</p>
         <div style={{display:'flex', justifyContent:'center', gap:'20px', marginBottom:'20px'}}>
            {/* WhatsApp */}
-           <a href="https://wa.me/263715198745" target="_blank" rel="noreferrer" style={{textDecoration:'none', fontSize:'28px'}} title="WhatsApp">🟢</a>
+           <a href="https://wa.me/263715198745" target="_blank" rel="noreferrer" style={{textDecoration:'none', display:'flex', alignItems:'center'}} title="WhatsApp">
+             <img src="/whatsapp.svg" alt="WhatsApp" style={{width:'32px', height:'32px'}} />
+           </a>
            {/* Facebook */}
-           <a href="https://facebook.com/theplugpwa" target="_blank" rel="noreferrer" style={{textDecoration:'none', fontSize:'28px'}} title="Facebook">🔵</a>
+           <a href="https://facebook.com/theplugpwa" target="_blank" rel="noreferrer" style={{textDecoration:'none', display:'flex', alignItems:'center'}} title="Facebook">
+             <img src="/facebook.svg" alt="Facebook" style={{width:'32px', height:'32px'}} />
+           </a>
            {/* Web URL */}
-           <a href="https://theplug.vercel.app" target="_blank" rel="noreferrer" style={{textDecoration:'none', fontSize:'28px'}} title="Website">🌐</a>
+           <a href="https://theplug.vercel.app" target="_blank" rel="noreferrer" style={{textDecoration:'none', fontSize:'32px', display:'flex', alignItems:'center'}} title="Website">🌐</a>
         </div>
         <p style={{textAlign:'center', fontSize:'11px', color:'var(--text-dim)', paddingBottom:'40px', paddingTop:'10px'}}>App Version 1.0.5 (Bulawayo Edition)</p>
       </div>
