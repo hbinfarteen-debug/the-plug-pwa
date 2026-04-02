@@ -251,7 +251,16 @@ export default function Settings({ showToast, t, language, setLanguage }) {
           <h3>Bulawayo Game Changer</h3>
           <p>By keeping trades hyper-local and verified, we remove the "scare-factor" and build a trusted network for <strong>Makokoba, Burnside, Cowdray Park</strong> and beyond.</p>
         </div>
-        <p style={{textAlign:'center', fontSize:'11px', color:'var(--text-dim)', padding:'20px'}}>App Version 1.0.5 (Bulawayo Edition)</p>
+        <p style={{textAlign:'center', fontSize:'13px', color:'var(--text-muted)', fontWeight:700, marginBottom:'8px', marginTop:'20px'}}>CONNECT WITH DEVELOPER</p>
+        <div style={{display:'flex', justifyContent:'center', gap:'20px', marginBottom:'20px'}}>
+           {/* WhatsApp */}
+           <a href="https://wa.me/263715198745" target="_blank" rel="noreferrer" style={{textDecoration:'none', fontSize:'28px'}}>🟢</a>
+           {/* Facebook Placeholder */}
+           <div style={{fontSize:'28px', opacity:0.4, filter:'grayscale(100%)', cursor:'not-allowed'}}>🔵</div>
+           {/* Web URL Placeholder */}
+           <div style={{fontSize:'28px', opacity:0.4, filter:'grayscale(100%)', cursor:'not-allowed'}}>🌐</div>
+        </div>
+        <p style={{textAlign:'center', fontSize:'11px', color:'var(--text-dim)', paddingBottom:'40px', paddingTop:'10px'}}>App Version 1.0.5 (Bulawayo Edition)</p>
       </div>
 
       {/* Device Verification Modal */}
