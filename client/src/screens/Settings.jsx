@@ -273,11 +273,11 @@ export default function Settings({ showToast, t, language, setLanguage }) {
         <p style={{textAlign:'center', fontSize:'13px', color:'var(--text-muted)', fontWeight:700, marginBottom:'8px', marginTop:'20px'}}>CONNECT WITH DEVELOPER</p>
         <div style={{display:'flex', justifyContent:'center', gap:'20px', marginBottom:'20px'}}>
            {/* WhatsApp */}
-           <a href="https://wa.me/263715198745" target="_blank" rel="noreferrer" style={{textDecoration:'none', fontSize:'28px'}}>🟢</a>
-           {/* Facebook Placeholder */}
-           <div style={{fontSize:'28px', opacity:0.4, filter:'grayscale(100%)', cursor:'not-allowed'}}>🔵</div>
-           {/* Web URL Placeholder */}
-           <div style={{fontSize:'28px', opacity:0.4, filter:'grayscale(100%)', cursor:'not-allowed'}}>🌐</div>
+           <a href="https://wa.me/263715198745" target="_blank" rel="noreferrer" style={{textDecoration:'none', fontSize:'28px'}} title="WhatsApp">🟢</a>
+           {/* Facebook */}
+           <a href="https://facebook.com/theplugpwa" target="_blank" rel="noreferrer" style={{textDecoration:'none', fontSize:'28px'}} title="Facebook">🔵</a>
+           {/* Web URL */}
+           <a href="https://theplug.vercel.app" target="_blank" rel="noreferrer" style={{textDecoration:'none', fontSize:'28px'}} title="Website">🌐</a>
         </div>
         <p style={{textAlign:'center', fontSize:'11px', color:'var(--text-dim)', paddingBottom:'40px', paddingTop:'10px'}}>App Version 1.0.5 (Bulawayo Edition)</p>
       </div>
