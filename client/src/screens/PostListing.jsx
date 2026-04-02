@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { uploadListingImages } from '../supabase';
 import { API_BASE_URL } from '../config';
 import { ALL_SUBURBS } from '../utils/suburbs';
@@ -7,6 +7,9 @@ import { ALL_SUBURBS } from '../utils/suburbs';
 export default function PostListing({ showToast }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id } = useParams();
+  const isEdit = !!id;
+
   const [type, setType] = useState(location.state?.type || 'item');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -19,7 +22,37 @@ export default function PostListing({ showToast }) {
   const [locationSearch, setLocationSearch] = useState('');
   const [images, setImages] = useState([]);
   const [previews, setPreviews] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    if (isEdit) {
+      setLoading(true);
+      fetch(`${API_BASE_URL}/api/listings/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.error) {
+            setType(data.type);
+            setTitle(data.title);
+            setDescription(data.description || '');
+            setCategory(data.category);
+            setPrice(String(data.price || '0.00'));
+            setIs16PlusFriendly(!!data.is16plusfriendly);
+            // In editing, we might not want to let them change the suburb or duration as it affects the bid lifecycle
+            // but the user just asked for description and pictures
+            try {
+               const imgs = typeof data.imageurls === 'string' ? JSON.parse(data.imageurls) : (data.imageurls || []);
+               setExistingImages(Array.isArray(imgs) ? imgs : []);
+            } catch(e) { setExistingImages([]); }
+          }
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [id, isEdit]);
+
+  const removeExistingImage = (idx) => {
+    setExistingImages(prev => prev.filter((_, i) => i !== idx));
+  };
 
   const toggleSuburb = (loc) => {
     const u = JSON.parse(localStorage.getItem('plug_user') || '{}');
@@ -73,7 +106,10 @@ export default function PostListing({ showToast }) {
     }
 
     try {
-      const body = {
+      const body = isEdit ? {
+        description,
+        imageUrls: [...existingImages, ...imageUrls]
+      } : {
         type,
         title,
         description,
@@ -86,17 +122,18 @@ export default function PostListing({ showToast }) {
         posterId: user.id,
         imageUrls
       };
-      const res = await fetch(`${API_BASE_URL}/api/listings`, {
-        method: 'POST',
+
+      const res = await fetch(isEdit ? `${API_BASE_URL}/api/listings/${id}` : `${API_BASE_URL}/api/listings`, {
+        method: isEdit ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
       if (res.ok) {
-        showToast('Your Plug is LIVE! 🚀', 'success');
-        setTimeout(() => navigate('/home'), 1500);
+        showToast(isEdit ? 'Plug updated! 🔄' : 'Your Plug is LIVE! 🚀', 'success');
+        setTimeout(() => navigate(isEdit ? '/myplugs' : '/home'), 1500);
       }
     } catch (e) {
-      showToast('Error posting listing', 'error');
+      showToast(isEdit ? 'Error updating plug' : 'Error posting listing', 'error');
     } finally {
       setIsUploading(false);
     }
@@ -106,54 +143,86 @@ export default function PostListing({ showToast }) {
     <div className="screen active">
       <div className="topbar">
         <div style={{cursor:'pointer',fontSize:'20px'}} onClick={()=>navigate(-1)}>‹</div>
-        <div className="logo" style={{fontSize:'16px'}}>POST A PLUG</div>
+        <div className="logo" style={{fontSize:'16px'}}>{isEdit ? 'MANAGE YOUR PLUG' : 'POST A PLUG'}</div>
         <div></div>
       </div>
       <div className="scroll-area">
         <div style={{padding:'18px 20px'}}>
-          <div className="post-toggle">
-            <div className={`ptype ${type==='item'?'active':''}`} onClick={()=>setType('item')}>🛒 Selling Item</div>
-            <div className={`ptype ${type==='gig'?'active':''}`} onClick={()=>setType('gig')}>💼 Posting Gig</div>
-          </div>
-          <div className="upload-zone" onClick={()=>document.getElementById('p-imgs').click()}>
+          {!isEdit && (
+            <div className="post-toggle">
+              <div className={`ptype ${type==='item'?'active':''}`} onClick={()=>setType('item')}>🛒 Selling Item</div>
+              <div className={`ptype ${type==='gig'?'active':''}`} onClick={()=>setType('gig')}>💼 Posting Gig</div>
+            </div>
+          )}
+          <div className="upload-zone" onClick={()=> (previews.length + existingImages.length) < 3 && document.getElementById('p-imgs').click()}>
             <input type="file" id="p-imgs" multiple accept="image/*" style={{display:'none'}} onChange={handleImageChange} />
-            {previews.length > 0 ? (
-              <div style={{display:'flex',gap:'10px',justifyContent:'center'}}>
-                {previews.map((p, i) => <img key={i} src={p} style={{width:'60px',height:'60px',borderRadius:'8px',objectFit:'cover'}} alt="preview" />)}
-              </div>
-            ) : (
-              <>
-                <div style={{fontSize:'30px'}}>📷</div>
-                <p>Tap to add photos (max 3)</p>
-              </>
-            )}
-            <div style={{fontSize:'11px', color:'var(--text-muted)', marginTop:'4px'}}>Auto-compressed · Deleted after 30 days</div>
+            <div style={{display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap'}}>
+              {/* Existing Images */}
+              {existingImages.map((src, i) => (
+                <div key={`ex-${i}`} style={{position:'relative'}}>
+                  <img src={src} style={{width:'60px',height:'60px',borderRadius:'8px',objectFit:'cover', border:'2px solid var(--green)'}} alt="existing" />
+                  <div 
+                    onClick={(e) => { e.stopPropagation(); removeExistingImage(i); }}
+                    style={{position:'absolute', top:'-8px', right:'-8px', background:'var(--red)', color:'white', width:'20px', height:'20px', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:900}}
+                  >✕</div>
+                </div>
+              ))}
+              {/* New Previews */}
+              {previews.map((p, i) => (
+                <div key={`pre-${i}`} style={{position:'relative'}}>
+                  <img src={p} style={{width:'60px',height:'60px',borderRadius:'8px',objectFit:'cover'}} alt="preview" />
+                  <div 
+                    onClick={(e) => { e.stopPropagation(); setPreviews(prev => prev.filter((_, idx) => idx !== i)); setImages(prev => Array.from(prev).filter((_, idx) => idx !== i)); }}
+                    style={{position:'absolute', top:'-8px', right:'-8px', background:'var(--red)', color:'white', width:'20px', height:'20px', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:900}}
+                  >✕</div>
+                </div>
+              ))}
+              {(previews.length + existingImages.length) === 0 && (
+                <>
+                  <div style={{fontSize:'30px'}}>📷</div>
+                  <p>Tap to add photos (max 3)</p>
+                </>
+              )}
+              {(previews.length + existingImages.length) > 0 && (previews.length + existingImages.length) < 3 && (
+                 <div style={{width:'60px', height:'60px', borderRadius:'8px', background:'var(--surface3)', border:'1.5px dashed var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'24px'}}>+</div>
+              )}
+            </div>
+            <div style={{fontSize:'11px', color:'var(--text-muted)', marginTop:'8px'}}>{isEdit ? 'Description & Images only (within 1hr)' : 'Auto-compressed · Deleted after 30 days'}</div>
           </div>
-          <div className="form-group">
-            <label className="form-label">TITLE</label>
-            <input className="field-input" value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="What are you selling / what's the job?" />
-          </div>
+          {isEdit ? (
+             <div style={{marginBottom:'20px', padding:'15px', background:'var(--surface3)', borderRadius:'12px', border:'1.5px solid var(--border)'}}>
+                <div style={{fontSize:'10px', color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'4px'}}>Title (Frozen)</div>
+                <div style={{fontSize:'18px', fontWeight:800, fontFamily:'"Syne", sans-serif'}}>{title}</div>
+             </div>
+          ) : (
+            <div className="form-group">
+              <label className="form-label">TITLE</label>
+              <input className="field-input" value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="What are you selling / what's the job?" />
+            </div>
+          )}
           <div className="form-group">
             <label className="form-label">DESCRIPTION</label>
             <textarea className="field-input" value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="Item condition or job requirements..." style={{height:'80px', paddingTop:'12px'}} />
           </div>
-          <div className="form-group">
-            <label className="form-label">CATEGORY</label>
-            <select className="field-input" value={category} onChange={(e)=>setCategory(e.target.value)}>
-              <option value="Tech & Electronics">📱 Tech & Electronics</option>
-              <option value="Home & Furniture">🏠 Home & Furniture</option>
-              <option value="Clothing & Fashion">👕 Clothing & Fashion</option>
-              <option value="Tools & Equipment">🔧 Tools & Equipment</option>
-              <option value="Medical & Mobility">♿ Medical & Mobility</option>
-              <option value="Gaming & Toys">🎮 Gaming & Toys</option>
-              <option value="Gardening & Outdoors">🌿 Gardening & Outdoors</option>
-              <option value="Moving & Labour">📦 Moving & Labour</option>
-              <option value="Vehicle Services">🚗 Vehicle Services</option>
-              <option value="Cleaning">🧹 Cleaning</option>
-              <option value="Food & Catering">🍕 Food & Catering</option>
-              <option value="Cosmetics">💄 Cosmetics</option>
-            </select>
-          </div>
+          {!isEdit && (
+            <div className="form-group">
+              <label className="form-label">CATEGORY</label>
+              <select className="field-input" value={category} onChange={(e)=>setCategory(e.target.value)}>
+                <option value="Tech & Electronics">📱 Tech & Electronics</option>
+                <option value="Home & Furniture">🏠 Home & Furniture</option>
+                <option value="Clothing & Fashion">👕 Clothing & Fashion</option>
+                <option value="Tools & Equipment">🔧 Tools & Equipment</option>
+                <option value="Medical & Mobility">♿ Medical & Mobility</option>
+                <option value="Gaming & Toys">🎮 Gaming & Toys</option>
+                <option value="Gardening & Outdoors">🌿 Gardening & Outdoors</option>
+                <option value="Moving & Labour">📦 Moving & Labour</option>
+                <option value="Vehicle Services">🚗 Vehicle Services</option>
+                <option value="Cleaning">🧹 Cleaning</option>
+                <option value="Food & Catering">🍕 Food & Catering</option>
+                <option value="Cosmetics">💄 Cosmetics</option>
+              </select>
+            </div>
+          )}
           
           <div className="form-group">
             <label className="form-label" style={{display:'flex', justifyContent:'space-between'}}>
@@ -206,17 +275,19 @@ export default function PostListing({ showToast }) {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">DURATION</label>
-            <div className="dur-grid">
-              {[24, 48, 72].map(h => (
-                <div key={h} className={`dur-card ${duration===h?'sel':''}`} onClick={()=>setDuration(h)}>
-                  <div className="h">{h}</div>
-                  <div className="hl">hours</div>
-                </div>
-              ))}
+          {!isEdit && (
+            <div className="form-group">
+              <label className="form-label">DURATION</label>
+              <div className="dur-grid">
+                {[24, 48, 72].map(h => (
+                  <div key={h} className={`dur-card ${duration===h?'sel':''}`} onClick={()=>setDuration(h)}>
+                    <div className="h">{h}</div>
+                    <div className="hl">hours</div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {type === 'item' && (
             <div className="price-note">
@@ -225,12 +296,23 @@ export default function PostListing({ showToast }) {
             </div>
           )}
 
-          {type === 'gig' && (
+          {!isEdit && type === 'gig' && (
             <div className="price-note">
               <strong>Blind Market</strong><br />
               <span style={{fontSize:'12px'}}>No starting price — bidders name their rate</span>
             </div>
           )}
+
+          <div className="bottom-nav" style={{position:'static', padding:'20px 0'}}>
+            <button 
+              className="btn-primary" 
+              style={{width:'100%', padding:'16px', justifyContent:'center'}}
+              onClick={doPost}
+              disabled={isUploading}
+            >
+              {isUploading ? (isEdit ? 'Saving...' : 'Posting...') : (isEdit ? 'Save Changes ✅' : 'Post Plug 🚀')}
+            </button>
+          </div>
 
           {type === 'gig' && (
             <div className="toggle-row">

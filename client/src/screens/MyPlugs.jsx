@@ -325,7 +325,7 @@ export default function MyPlugs({ showToast, t, onSuccess }) {
                             showToast('Edit window closed (1hr limit reached)', 'error');
                             return;
                           }
-                          navigate(`/detail/${h.id}`);
+                          navigate(`/edit/${h.id}`);
                         }}
                       >
                         {t.manage}

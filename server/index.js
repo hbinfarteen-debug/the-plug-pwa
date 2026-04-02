@@ -609,6 +609,28 @@ app.delete('/api/listings/:id', async (req, res) => {
   }
 });
 
+app.patch('/api/listings/:id', async (req, res) => {
+  const { description, imageUrls } = req.body;
+  try {
+    const listingId = req.params.id;
+    // We only allow updating description and images for now per user request
+    if (imageUrls) {
+      await db.query(
+        'UPDATE listings SET description = $1, imageurls = $2 WHERE id = $3',
+        [description, JSON.stringify(imageUrls), listingId]
+      );
+    } else {
+      await db.query(
+        'UPDATE listings SET description = $1 WHERE id = $2',
+        [description, listingId]
+      );
+    }
+    res.json({ success: true, message: 'Listing updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Messaging
 app.get('/api/chats/:userId', async (req, res) => {
   const { userId } = req.params;

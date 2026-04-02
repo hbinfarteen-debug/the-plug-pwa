@@ -82,6 +82,7 @@ function App() {
           <Route path="/home" element={<Home showToast={showToast} t={t} />} />
           <Route path="/search" element={<Search t={t} />} />
           <Route path="/post" element={<PostListing showToast={showToast} t={t} />} />
+          <Route path="/edit/:id" element={<PostListing showToast={showToast} t={t} />} />
           <Route path="/profile/:id" element={<PublicProfile showToast={showToast} t={t} />} />
           <Route path="/myplugs" element={<MyPlugs showToast={showToast} t={t} onSuccess={() => setSuccessData({})} />} />
           <Route path="/profile" element={<Profile showToast={showToast} t={t} />} />
