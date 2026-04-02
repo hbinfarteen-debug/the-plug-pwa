@@ -208,9 +208,8 @@ export default function Chat({ showToast, t }) {
           const phoneToCheck = m.senderPhone || (isSender ? user.phone : null);
           const roleToCheck = m.senderRole || (isSender ? user.role : null);
           
-          const isAdminAccount = roleToCheck === 'admin' || phoneToCheck === '263715198745' || phoneToCheck === '263775939688' || m.is_admin;
-          const isParticipant = (Number(chatInfo?.buyerId) === Number(m.senderId) || Number(chatInfo?.sellerId) === Number(m.senderId));
-          const renderAsAdmin = (isAdminAccount && !isParticipant) || m.is_admin;
+          // Only render as admin if the message was explicitly flagged as a deliberate admin intervention
+          const renderAsAdmin = m.is_admin === true || m.is_admin === 1;
 
           const senderName = m.senderName || (isSender ? user.fullname : otherPersonName);
           const initial = senderName?.charAt(0)?.toUpperCase() || '?';
